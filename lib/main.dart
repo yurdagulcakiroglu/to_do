@@ -88,22 +88,38 @@ class _CategoryPageState extends State<CategoryPage> {
       body: ListView.builder(
         itemCount: categories.length,
         itemBuilder: (context, index) {
-          return ListTile(
-            title: Text(categories[index].name),
-            trailing: IconButton(
-              icon: const Icon(Icons.delete),
-              onPressed: () {
-                _removeTodoCategory(categories[index]); // Kategoriyi sil
+          final category = categories[index];
+          final previewText = category.todolist.isEmpty
+              ? 'Liste boş'
+              : category.todolist.length <= 3
+                  ? category.todolist.join(', ')
+                  : category.todolist.sublist(0, 3).join(', ') + '...';
+
+          return Card(
+            margin: const EdgeInsets.all(8.0),
+            elevation: 5,
+            child: ListTile(
+              contentPadding: const EdgeInsets.all(16.0),
+              title: Text(category.name, style: const TextStyle(fontSize: 18)),
+              subtitle: Text(
+                previewText,
+                overflow: TextOverflow.ellipsis,
+              ),
+              trailing: IconButton(
+                icon: const Icon(Icons.delete),
+                onPressed: () {
+                  _removeTodoCategory(category); // Kategoriyi sil
+                },
+              ),
+              onTap: () {
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                    builder: (context) => MyHomePage(category: category),
+                  ),
+                );
               },
             ),
-            onTap: () {
-              Navigator.push(
-                context,
-                MaterialPageRoute(
-                  builder: (context) => MyHomePage(category: categories[index]),
-                ),
-              );
-            },
           );
         },
       ),
