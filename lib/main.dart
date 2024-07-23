@@ -1,11 +1,15 @@
 import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import 'profile.dart';
+import 'settings.dart';
 
 void main() {
-  runApp(Deneme());
+  runApp(const Deneme());
 }
 
 class Deneme extends StatelessWidget {
+  const Deneme({super.key});
+
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
@@ -13,13 +17,16 @@ class Deneme extends StatelessWidget {
       theme: ThemeData(
         primarySwatch: Colors.blue,
       ),
-      home: CategoryPage(),
+      home: const CategoryPage(),
     );
   }
 }
 
 class CategoryPage extends StatefulWidget {
+  const CategoryPage({super.key});
+
   @override
+  // ignore: library_private_types_in_public_api
   _CategoryPageState createState() => _CategoryPageState();
 }
 
@@ -75,8 +82,26 @@ class _CategoryPageState extends State<CategoryPage> {
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
         content: Text('${category.name} kategorisi silindi'),
+        action: SnackBarAction(
+          label: 'Geri Al',
+          onPressed: () {
+            setState(() {
+              categories.add(category); // Silinen kategoriyi geri al
+            });
+          },
+        ),
       ),
     );
+  }
+
+  Future<void> _navigateToCategory(Category category) async {
+    await Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (context) => MyHomePage(category: category),
+      ),
+    );
+    setState(() {}); // Geri dönüldüğünde kategorileri yenile
   }
 
   @override
@@ -84,17 +109,63 @@ class _CategoryPageState extends State<CategoryPage> {
     return Scaffold(
       appBar: AppBar(
         title: const Text('Kategoriler'),
+        backgroundColor: const Color.fromARGB(255, 216, 198, 251),
         centerTitle: true,
+      ),
+      drawer: Drawer(
+        child: ListView(
+          padding: EdgeInsets.zero,
+          children: <Widget>[
+            const DrawerHeader(
+              decoration: BoxDecoration(
+                color: Color.fromARGB(255, 216, 198, 251),
+              ),
+              child: Text(
+                'Menü',
+                style: TextStyle(
+                  fontSize: 24,
+                ),
+              ),
+            ),
+            ListTile(
+              leading: const Icon(Icons.person),
+              title: const Text('Profil'),
+              onTap: () {
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(builder: (context) => const ProfilePage()),
+                );
+              },
+            ),
+            ListTile(
+              leading: const Icon(Icons.settings),
+              title: const Text('Ayarlar'),
+              onTap: () {
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(builder: (context) => const SettingsPage()),
+                );
+              },
+            ),
+            ListTile(
+              leading: const Icon(Icons.logout),
+              title: const Text('Çıkış'),
+              onTap: () {
+                // Çıkış işlemi
+              },
+            ),
+          ],
+        ),
       ),
       body: ListView.builder(
         itemCount: categories.length,
         itemBuilder: (context, index) {
           final category = categories[index];
           final previewText = category.todolist.isEmpty
-              ? 'Liste boş'
+              ? ''
               : category.todolist.length <= 3
                   ? category.todolist.join(', ')
-                  : category.todolist.sublist(0, 3).join(', ') + '...';
+                  : '${category.todolist.sublist(0, 3).join(', ')}...';
 
           return Card(
             margin: const EdgeInsets.all(8.0),
@@ -113,12 +184,7 @@ class _CategoryPageState extends State<CategoryPage> {
                 },
               ),
               onTap: () {
-                Navigator.push(
-                  context,
-                  MaterialPageRoute(
-                    builder: (context) => MyHomePage(category: category),
-                  ),
-                );
+                _navigateToCategory(category); // Kategoriyi aç
               },
             ),
           );
@@ -205,6 +271,17 @@ class _MyHomePageState extends State<MyHomePage> {
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
         content: Text('$itemName silindi'), // Silinen öğe burada gösteriliyor
+        action: SnackBarAction(
+          label: 'Geri Al',
+          onPressed: () {
+            setState(() {
+              filteredLists.add(itemName);
+              filteredLists.sort(); // Sıralı hale getir
+              todolist.add(itemName);
+              widget.category.todolist.add(itemName);
+            });
+          },
+        ),
       ),
     );
   }
@@ -223,7 +300,7 @@ class _MyHomePageState extends State<MyHomePage> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        backgroundColor: const Color.fromARGB(255, 191, 162, 249),
+        backgroundColor: const Color.fromARGB(255, 216, 198, 251),
         title: Text(widget.category.name),
         centerTitle: true,
         bottom: PreferredSize(
