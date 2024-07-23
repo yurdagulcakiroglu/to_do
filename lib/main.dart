@@ -4,12 +4,10 @@ import 'profile.dart';
 import 'settings.dart';
 
 void main() {
-  runApp(const Deneme());
+  runApp(Deneme());
 }
 
 class Deneme extends StatelessWidget {
-  const Deneme({super.key});
-
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
@@ -17,16 +15,13 @@ class Deneme extends StatelessWidget {
       theme: ThemeData(
         primarySwatch: Colors.blue,
       ),
-      home: const CategoryPage(),
+      home: CategoryPage(),
     );
   }
 }
 
 class CategoryPage extends StatefulWidget {
-  const CategoryPage({super.key});
-
   @override
-  // ignore: library_private_types_in_public_api
   _CategoryPageState createState() => _CategoryPageState();
 }
 
@@ -68,6 +63,46 @@ class _CategoryPageState extends State<CategoryPage> {
                 Navigator.of(context).pop(); // Dialogu kapat
               },
               child: const Text('Ekle'),
+            ),
+          ],
+        );
+      },
+    );
+  }
+
+  void _showEditCategoryDialog(Category category) {
+    final TextEditingController controller =
+        TextEditingController(text: category.name);
+
+    showDialog(
+      context: context,
+      builder: (BuildContext context) {
+        return AlertDialog(
+          title: const Text('Kategori Düzenle'),
+          content: TextField(
+            controller: controller,
+            decoration: const InputDecoration(
+              labelText: 'Kategori Adı',
+            ),
+          ),
+          actions: <Widget>[
+            TextButton(
+              onPressed: () {
+                Navigator.of(context).pop(); // Dialogu kapat
+              },
+              child: const Text('İptal'),
+            ),
+            ElevatedButton(
+              onPressed: () {
+                final String categoryName = controller.text;
+                if (categoryName.isNotEmpty) {
+                  setState(() {
+                    category.name = categoryName; // Kategori adını güncelle
+                  });
+                }
+                Navigator.of(context).pop(); // Dialogu kapat
+              },
+              child: const Text('Kaydet'),
             ),
           ],
         );
@@ -118,11 +153,12 @@ class _CategoryPageState extends State<CategoryPage> {
           children: <Widget>[
             const DrawerHeader(
               decoration: BoxDecoration(
-                color: Color.fromARGB(255, 216, 198, 251),
+                color: Colors.blue,
               ),
               child: Text(
                 'Menü',
                 style: TextStyle(
+                  color: Colors.white,
                   fontSize: 24,
                 ),
               ),
@@ -177,11 +213,22 @@ class _CategoryPageState extends State<CategoryPage> {
                 previewText,
                 overflow: TextOverflow.ellipsis,
               ),
-              trailing: IconButton(
-                icon: const Icon(Icons.delete),
-                onPressed: () {
-                  _removeTodoCategory(category); // Kategoriyi sil
-                },
+              trailing: Row(
+                mainAxisSize: MainAxisSize.min,
+                children: <Widget>[
+                  IconButton(
+                    icon: const Icon(Icons.edit),
+                    onPressed: () {
+                      _showEditCategoryDialog(category); // Kategoriyi düzenle
+                    },
+                  ),
+                  IconButton(
+                    icon: const Icon(Icons.delete),
+                    onPressed: () {
+                      _removeTodoCategory(category); // Kategoriyi sil
+                    },
+                  ),
+                ],
               ),
               onTap: () {
                 _navigateToCategory(category); // Kategoriyi aç
@@ -261,6 +308,51 @@ class _MyHomePageState extends State<MyHomePage> {
     );
   }
 
+  void _showEditItemDialog(int index) {
+    final String currentItem = filteredLists[index];
+    final TextEditingController controller =
+        TextEditingController(text: currentItem);
+
+    showDialog(
+      context: context,
+      builder: (BuildContext context) {
+        return AlertDialog(
+          title: const Text('Ögeyi Düzenle'),
+          content: TextField(
+            controller: controller,
+            decoration: const InputDecoration(
+              labelText: 'Öge',
+            ),
+          ),
+          actions: <Widget>[
+            TextButton(
+              onPressed: () {
+                Navigator.of(context).pop(); // Dialogu kapat
+              },
+              child: const Text('İptal'),
+            ),
+            ElevatedButton(
+              onPressed: () {
+                final String newItem = controller.text;
+                if (newItem.isNotEmpty) {
+                  setState(() {
+                    final oldItem = filteredLists[index];
+                    filteredLists[index] = newItem;
+                    todolist[todolist.indexOf(oldItem)] = newItem;
+                    widget.category.todolist[
+                        widget.category.todolist.indexOf(oldItem)] = newItem;
+                  });
+                }
+                Navigator.of(context).pop(); // Dialogu kapat
+              },
+              child: const Text('Kaydet'),
+            ),
+          ],
+        );
+      },
+    );
+  }
+
   void _removeTodoItem(int index) {
     final itemName = filteredLists[index];
     setState(() {
@@ -286,55 +378,42 @@ class _MyHomePageState extends State<MyHomePage> {
     );
   }
 
-  void _filterList(String query) {
-    final filtered = todolist.where((toDoItem) {
-      return toDoItem.toLowerCase().contains(query.toLowerCase());
-    }).toList();
-
-    setState(() {
-      filteredLists = filtered;
-    });
-  }
-
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        backgroundColor: const Color.fromARGB(255, 216, 198, 251),
         title: Text(widget.category.name),
-        centerTitle: true,
-        bottom: PreferredSize(
-          preferredSize: const Size.fromHeight(50.0),
-          child: Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 16.0),
-            child: TextField(
-              onChanged: _filterList,
-              decoration: const InputDecoration(
-                hintText: 'Ara',
-                border: InputBorder.none,
-                prefixIcon: Icon(Icons.search), // Büyüteç ikonu ekleme
-              ),
-            ),
-          ),
-        ),
       ),
       body: ListView.builder(
         itemCount: filteredLists.length,
         itemBuilder: (context, index) {
-          return ListTile(
-            title: Text(filteredLists[index]),
-            trailing: IconButton(
-              icon: const Icon(Icons.delete),
-              onPressed: () {
-                _removeTodoItem(index);
-              },
+          return Card(
+            child: ListTile(
+              title: Text(filteredLists[index]),
+              trailing: Row(
+                mainAxisSize: MainAxisSize.min,
+                children: <Widget>[
+                  IconButton(
+                    icon: const Icon(Icons.edit),
+                    onPressed: () {
+                      _showEditItemDialog(index); // Ögeyi düzenle
+                    },
+                  ),
+                  IconButton(
+                    icon: const Icon(Icons.delete),
+                    onPressed: () {
+                      _removeTodoItem(index); // Ögeyi sil
+                    },
+                  ),
+                ],
+              ),
             ),
           );
         },
       ),
       floatingActionButton: FloatingActionButton(
         onPressed: _showAddItemDialog,
-        tooltip: 'Yeni Öge Ekle',
+        tooltip: 'Ekle',
         child: const Icon(Icons.add),
       ),
     );
@@ -342,10 +421,9 @@ class _MyHomePageState extends State<MyHomePage> {
 }
 
 class Category {
-  final String
-      id; // Kategoriyi benzersiz şekilde tanımlamak için eklenen özellik
-  final String name;
-  final List<String> todolist;
+  String id;
+  String name;
+  List<String> todolist;
 
   Category({required this.id, required this.name, required this.todolist});
 }
