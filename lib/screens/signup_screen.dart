@@ -1,8 +1,9 @@
 import 'package:flutter/material.dart';
-import 'package:font_awesome_flutter/font_awesome_flutter.dart';
-import 'package:to_do/screens/signin_screen.dart';
+import 'package:to_do/category_page.dart';
 import 'package:to_do/theme/theme.dart';
 import 'package:to_do/widgets/custom_scaffold.dart';
+import 'package:to_do/screens/signin_screen.dart';
+import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 
 class SignUpScreen extends StatefulWidget {
   const SignUpScreen({super.key});
@@ -187,9 +188,11 @@ class _SignUpScreenState extends State<SignUpScreen> {
                           onPressed: () {
                             if (_formSignupKey.currentState!.validate() &&
                                 agreePersonalData) {
-                              ScaffoldMessenger.of(context).showSnackBar(
-                                const SnackBar(
-                                  content: Text('Processing Data'),
+                              // Navigate to CategoryPage
+                              Navigator.push(
+                                context,
+                                MaterialPageRoute(
+                                  builder: (context) => const CategoryPage(),
                                 ),
                               );
                             } else if (!agreePersonalData) {
