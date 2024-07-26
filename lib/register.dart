@@ -1,72 +1,214 @@
+import 'package:animate_do/animate_do.dart';
 import 'package:flutter/material.dart';
-import 'package:shared_preferences/shared_preferences.dart';
-import 'profile.dart';
 
-class RegisterPage extends StatefulWidget {
-  const RegisterPage({super.key});
-
-  @override
-  _RegisterPageState createState() => _RegisterPageState();
-}
-
-class _RegisterPageState extends State<RegisterPage> {
-  final TextEditingController _nameController = TextEditingController();
-  final TextEditingController _emailController = TextEditingController();
-  final TextEditingController _phoneController = TextEditingController();
-  final TextEditingController _addressController = TextEditingController();
-
-  Future<void> _register() async {
-    final SharedPreferences prefs = await SharedPreferences.getInstance();
-    await prefs.setString('name', _nameController.text);
-    await prefs.setString('email', _emailController.text);
-    await prefs.setString('phone', _phoneController.text);
-    await prefs.setString('address', _addressController.text);
-
-    Navigator.pushReplacement(
-      context,
-      MaterialPageRoute(builder: (context) => const ProfilePage()),
-    );
-  }
+class LogInPage extends StatelessWidget {
+  const LogInPage({super.key});
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(
-        title: const Text('Kayıt Ol'),
-        backgroundColor: const Color.fromARGB(255, 216, 198, 251),
-        centerTitle: true,
-      ),
-      body: Padding(
-        padding: const EdgeInsets.all(16.0),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: <Widget>[
-            _buildTextField(_nameController, 'Ad'),
-            _buildTextField(_emailController, 'Email'),
-            _buildTextField(_phoneController, 'Telefon'),
-            _buildTextField(_addressController, 'Adres'),
-            const SizedBox(height: 20),
-            Center(
-              child: ElevatedButton(
-                onPressed: _register,
-                child: const Text('Kayıt Ol'),
+        backgroundColor: Colors.white,
+        body: SingleChildScrollView(
+          child: Column(
+            children: <Widget>[
+              Container(
+                height: 400,
+                decoration: const BoxDecoration(
+                    image: DecorationImage(
+                        image: AssetImage('assets/images/background.png'),
+                        fit: BoxFit.fill)),
+                child: Stack(
+                  children: <Widget>[
+                    Positioned(
+                      left: 30,
+                      width: 80,
+                      height: 200,
+                      child: FadeInUp(
+                          duration: const Duration(seconds: 1),
+                          child: Container(
+                            decoration: const BoxDecoration(
+                                image: DecorationImage(
+                                    image: AssetImage(
+                                        'assets/images/light-1.png'))),
+                          )),
+                    ),
+                    Positioned(
+                      left: 140,
+                      width: 80,
+                      height: 150,
+                      child: FadeInUp(
+                          duration: const Duration(milliseconds: 1200),
+                          child: Container(
+                            decoration: const BoxDecoration(
+                                image: DecorationImage(
+                                    image: AssetImage(
+                                        'assets/images/light-2.png'))),
+                          )),
+                    ),
+                    Positioned(
+                      right: 40,
+                      top: 40,
+                      width: 80,
+                      height: 150,
+                      child: FadeInUp(
+                          duration: const Duration(milliseconds: 1300),
+                          child: Container(
+                            decoration: const BoxDecoration(
+                                image: DecorationImage(
+                                    image:
+                                        AssetImage('assets/images/clock.png'))),
+                          )),
+                    ),
+                    Positioned(
+                      child: FadeInUp(
+                          duration: const Duration(milliseconds: 1600),
+                          child: Container(
+                            margin: const EdgeInsets.only(top: 50),
+                            child: const Center(
+                              child: Text(
+                                "Login",
+                                style: TextStyle(
+                                    color: Colors.white,
+                                    fontSize: 40,
+                                    fontWeight: FontWeight.bold),
+                              ),
+                            ),
+                          )),
+                    )
+                  ],
+                ),
               ),
-            ),
-          ],
-        ),
-      ),
-    );
+              Padding(
+                padding: const EdgeInsets.all(30.0),
+                child: Column(
+                  children: <Widget>[
+                    FadeInUp(
+                        duration: const Duration(milliseconds: 1800),
+                        child: Container(
+                          padding: const EdgeInsets.all(5),
+                          decoration: BoxDecoration(
+                              color: Colors.white,
+                              borderRadius: BorderRadius.circular(10),
+                              border: Border.all(
+                                  color:
+                                      const Color.fromRGBO(143, 148, 251, 1)),
+                              boxShadow: const [
+                                BoxShadow(
+                                    color: Color.fromRGBO(143, 148, 251, .2),
+                                    blurRadius: 20.0,
+                                    offset: Offset(0, 10))
+                              ]),
+                          child: Column(
+                            children: <Widget>[
+                              Container(
+                                padding: const EdgeInsets.all(8.0),
+                                decoration: const BoxDecoration(
+                                    border: Border(
+                                        bottom: BorderSide(
+                                            color: Color.fromRGBO(
+                                                143, 148, 251, 1)))),
+                                child: TextField(
+                                  decoration: InputDecoration(
+                                      border: InputBorder.none,
+                                      hintText: "Email or Phone number",
+                                      hintStyle:
+                                          TextStyle(color: Colors.grey[700])),
+                                ),
+                              ),
+                              Container(
+                                padding: const EdgeInsets.all(8.0),
+                                child: TextField(
+                                  obscureText: true,
+                                  decoration: InputDecoration(
+                                      border: InputBorder.none,
+                                      hintText: "Password",
+                                      hintStyle:
+                                          TextStyle(color: Colors.grey[700])),
+                                ),
+                              )
+                            ],
+                          ),
+                        )),
+                    const SizedBox(
+                      height: 30,
+                    ),
+                    FadeInUp(
+                        duration: const Duration(milliseconds: 1900),
+                        child: Container(
+                          height: 50,
+                          decoration: BoxDecoration(
+                              borderRadius: BorderRadius.circular(10),
+                              gradient: const LinearGradient(colors: [
+                                Color.fromRGBO(143, 148, 251, 1),
+                                Color.fromRGBO(143, 148, 251, .6),
+                              ])),
+                          child: const Center(
+                            child: Text(
+                              "Login",
+                              style: TextStyle(
+                                  color: Colors.white,
+                                  fontWeight: FontWeight.bold),
+                            ),
+                          ),
+                        )),
+                    const SizedBox(
+                      height: 20,
+                    ),
+                    FadeInUp(
+                        duration: const Duration(milliseconds: 1950),
+                        child: Row(
+                          mainAxisAlignment: MainAxisAlignment.center,
+                          children: <Widget>[
+                            _socialLoginButton(
+                                "Google", "assets/images/google_logo.png"),
+                            const SizedBox(
+                              width: 20,
+                            ),
+                            _socialLoginButton(
+                                "Apple", "assets/images/apple_logo.png"),
+                          ],
+                        )),
+                    const SizedBox(
+                      height: 70,
+                    ),
+                    FadeInUp(
+                        duration: const Duration(milliseconds: 2000),
+                        child: const Text(
+                          "Forgot Password?",
+                          style: TextStyle(
+                              color: Color.fromRGBO(143, 148, 251, 1)),
+                        )),
+                  ],
+                ),
+              )
+            ],
+          ),
+        ));
   }
 
-  Widget _buildTextField(TextEditingController controller, String label) {
-    return Padding(
-      padding: const EdgeInsets.symmetric(vertical: 8.0),
-      child: TextField(
-        controller: controller,
-        decoration: InputDecoration(
-          labelText: label,
-          border: const OutlineInputBorder(),
+  Widget _socialLoginButton(String label, String logoPath) {
+    return ElevatedButton(
+      onPressed: () {
+        // Handle the social login logic
+      },
+      style: ElevatedButton.styleFrom(
+        foregroundColor: Colors.black,
+        backgroundColor: Colors.white,
+        minimumSize: const Size(120, 50),
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(10),
+          side: const BorderSide(color: Color.fromRGBO(143, 148, 251, 1)),
         ),
+      ),
+      child: Row(
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: <Widget>[
+          Image.asset(logoPath, width: 24, height: 24),
+          const SizedBox(
+            width: 10,
+          ),
+          Text(label, style: const TextStyle(color: Colors.black)),
+        ],
       ),
     );
   }
