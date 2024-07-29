@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 import 'package:to_do/screens/signup_screen.dart';
 import 'package:to_do/widgets/custom_scaffold.dart';
-
+import 'package:to_do/screens/forget_password_screen.dart';
 import '../theme/theme.dart';
 
 class SignInScreen extends StatefulWidget {
@@ -139,14 +139,22 @@ class _SignInScreenState extends State<SignInScreen> {
                             ],
                           ),
                           GestureDetector(
-                            child: Text(
-                              'Şifremi Unuttum?',
-                              style: TextStyle(
-                                fontWeight: FontWeight.bold,
-                                color: lightColorScheme.primary,
+                              child: Text(
+                                'Şifremi Unuttum?',
+                                style: TextStyle(
+                                  fontWeight: FontWeight.bold,
+                                  color: lightColorScheme.primary,
+                                ),
                               ),
-                            ),
-                          ),
+                              onTap: () {
+                                Navigator.push(
+                                  context,
+                                  MaterialPageRoute(
+                                    builder: (e) =>
+                                        const ForgetPasswordScreen(),
+                                  ),
+                                );
+                              }),
                         ],
                       ),
                       const SizedBox(
@@ -231,7 +239,7 @@ class _SignInScreenState extends State<SignInScreen> {
                         mainAxisAlignment: MainAxisAlignment.center,
                         children: [
                           const Text(
-                            'Don\'t have an account? ',
+                            'Hesabın yok mu? ',
                             style: TextStyle(
                               color: Colors.black45,
                             ),
@@ -246,7 +254,7 @@ class _SignInScreenState extends State<SignInScreen> {
                               );
                             },
                             child: Text(
-                              'Sign up',
+                              'Kaydol',
                               style: TextStyle(
                                 fontWeight: FontWeight.bold,
                                 color: lightColorScheme.primary,

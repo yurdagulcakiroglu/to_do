@@ -3,7 +3,6 @@ import 'package:shared_preferences/shared_preferences.dart';
 import 'my_home_page.dart';
 import 'profile.dart';
 import 'settings.dart';
-import 'register.dart';
 
 class CategoryPage extends StatefulWidget {
   const CategoryPage({super.key});

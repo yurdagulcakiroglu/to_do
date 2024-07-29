@@ -60,13 +60,13 @@ class _SignUpScreenState extends State<SignUpScreen> {
                       TextFormField(
                         validator: (value) {
                           if (value == null || value.isEmpty) {
-                            return 'Lütfen Tam İsminizi Girin';
+                            return 'Lütfen İsim-Soyisminizi Girin ';
                           }
                           return null;
                         },
                         decoration: InputDecoration(
-                          label: const Text('İsim-Soyisim'),
-                          hintText: 'Enter Full Name',
+                          label: const Text('isim-Soyisim'),
+                          hintText: 'İsim-Soyisminizi Girin',
                           hintStyle: const TextStyle(
                             color: Colors.black26,
                           ),
@@ -97,7 +97,7 @@ class _SignUpScreenState extends State<SignUpScreen> {
                         },
                         decoration: InputDecoration(
                           label: const Text('Email'),
-                          hintText: 'Enter Email',
+                          hintText: 'Email Girin',
                           hintStyle: const TextStyle(
                             color: Colors.black26,
                           ),
@@ -280,7 +280,7 @@ class _SignUpScreenState extends State<SignUpScreen> {
                         mainAxisAlignment: MainAxisAlignment.center,
                         children: [
                           const Text(
-                            'Zaten bir hesabın var mı?? ',
+                            'Zaten bir hesabın var mı? ',
                             style: TextStyle(
                               color: Colors.black45,
                             ),

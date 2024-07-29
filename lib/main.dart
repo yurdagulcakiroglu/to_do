@@ -3,7 +3,6 @@ import 'package:shared_preferences/shared_preferences.dart';
 import 'category_page.dart';
 import 'profile.dart';
 import 'settings.dart';
-import 'register.dart';
 import 'package:to_do/screens/welcome_screen.dart';
 import 'package:to_do/theme/theme.dart';
 
