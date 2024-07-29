@@ -14,35 +14,48 @@ class WelcomeScreen extends StatelessWidget {
       child: Column(
         children: [
           Flexible(
-              flex: 8,
-              child: Container(
-                padding: const EdgeInsets.symmetric(
-                  vertical: 0,
-                  horizontal: 40.0,
-                ),
-                child: Center(
-                  child: RichText(
-                    textAlign: TextAlign.center,
-                    text: const TextSpan(
-                      children: [
-                        TextSpan(
-                            text: 'Welcome Back!\n',
-                            style: TextStyle(
-                              fontSize: 45.0,
-                              fontWeight: FontWeight.w600,
-                            )),
-                        TextSpan(
-                            text:
-                                '\nEnter personal details to your employee account',
-                            style: TextStyle(
-                              fontSize: 20,
-                              // height: 0,
-                            ))
-                      ],
+            flex: 8,
+            child: Container(
+              padding: const EdgeInsets.symmetric(
+                vertical: 0,
+                horizontal: 40.0,
+              ),
+              child: Center(
+                child: Column(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    Image.asset(
+                      'assets/images/note.png',
+                      width:
+                          100, // Genişlik ve yükseklik değerlerini ihtiyacınıza göre ayarlayın
+                      height: 100,
                     ),
-                  ),
+                    const SizedBox(
+                        height:
+                            20), // Resim ve yazı arasında boşluk bırakmak için
+                    RichText(
+                      textAlign: TextAlign.center,
+                      text: const TextSpan(
+                        children: [
+                          TextSpan(
+                              text: 'TO-DO',
+                              style: TextStyle(
+                                fontSize: 45.0,
+                                fontWeight: FontWeight.w600,
+                              )),
+                          TextSpan(
+                              text: '\nWelcome Back!',
+                              style: TextStyle(
+                                fontSize: 20,
+                              ))
+                        ],
+                      ),
+                    ),
+                  ],
                 ),
-              )),
+              ),
+            ),
+          ),
           Flexible(
             flex: 1,
             child: Align(
@@ -51,7 +64,7 @@ class WelcomeScreen extends StatelessWidget {
                 children: [
                   Expanded(
                     child: WelcomeButton(
-                      buttonText: 'Sign in',
+                      buttonText: 'Giriş',
                       onTap: () => Navigator.push(
                         context,
                         MaterialPageRoute(
@@ -64,7 +77,7 @@ class WelcomeScreen extends StatelessWidget {
                   ),
                   Expanded(
                     child: WelcomeButton(
-                      buttonText: 'Sign up',
+                      buttonText: 'Kaydol',
                       onTap: () => Navigator.push(
                         context,
                         MaterialPageRoute(
@@ -72,7 +85,7 @@ class WelcomeScreen extends StatelessWidget {
                         ),
                       ),
                       color: Colors.white,
-                      textColor: lightColorScheme.primary,
+                      textColor: Color.fromARGB(255, 111, 148, 243),
                     ),
                   ),
                 ],

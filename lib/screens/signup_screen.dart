@@ -60,12 +60,12 @@ class _SignUpScreenState extends State<SignUpScreen> {
                       TextFormField(
                         validator: (value) {
                           if (value == null || value.isEmpty) {
-                            return 'Please enter Full name';
+                            return 'Lütfen Tam İsminizi Girin';
                           }
                           return null;
                         },
                         decoration: InputDecoration(
-                          label: const Text('Full Name'),
+                          label: const Text('İsim-Soyisim'),
                           hintText: 'Enter Full Name',
                           hintStyle: const TextStyle(
                             color: Colors.black26,
@@ -91,7 +91,7 @@ class _SignUpScreenState extends State<SignUpScreen> {
                       TextFormField(
                         validator: (value) {
                           if (value == null || value.isEmpty) {
-                            return 'Please enter Email';
+                            return 'Lütfen Email Girin';
                           }
                           return null;
                         },
@@ -124,12 +124,12 @@ class _SignUpScreenState extends State<SignUpScreen> {
                         obscuringCharacter: '*',
                         validator: (value) {
                           if (value == null || value.isEmpty) {
-                            return 'Please enter Password';
+                            return 'Lütfen Parola Girin';
                           }
                           return null;
                         },
                         decoration: InputDecoration(
-                          label: const Text('Password'),
+                          label: const Text('Parola'),
                           hintText: 'Enter Password',
                           hintStyle: const TextStyle(
                             color: Colors.black26,
@@ -164,16 +164,16 @@ class _SignUpScreenState extends State<SignUpScreen> {
                             activeColor: lightColorScheme.primary,
                           ),
                           const Text(
-                            'I agree to the processing of ',
-                            style: TextStyle(
-                              color: Colors.black45,
-                            ),
-                          ),
-                          Text(
-                            'Personal data',
+                            'Kişisel verilerin ',
                             style: TextStyle(
                               fontWeight: FontWeight.bold,
-                              color: lightColorScheme.primary,
+                              color: Color.fromARGB(255, 83, 120, 215),
+                            ),
+                          ),
+                          const Text(
+                            'işlenmesini kabul ediyorum.',
+                            style: TextStyle(
+                              color: Colors.black45,
                             ),
                           ),
                         ],
@@ -199,11 +199,11 @@ class _SignUpScreenState extends State<SignUpScreen> {
                               ScaffoldMessenger.of(context).showSnackBar(
                                 const SnackBar(
                                     content: Text(
-                                        'Please agree to the processing of personal data')),
+                                        'Lütfen kişisel verilerinizin işlenmesine onay verin!')),
                               );
                             }
                           },
-                          child: const Text('Sign up'),
+                          child: const Text('Kaydol'),
                         ),
                       ),
                       const SizedBox(
@@ -225,7 +225,7 @@ class _SignUpScreenState extends State<SignUpScreen> {
                               horizontal: 10,
                             ),
                             child: Text(
-                              'Sign up with',
+                              '..',
                               style: TextStyle(
                                 color: Colors.black45,
                               ),
@@ -280,7 +280,7 @@ class _SignUpScreenState extends State<SignUpScreen> {
                         mainAxisAlignment: MainAxisAlignment.center,
                         children: [
                           const Text(
-                            'Already have an account? ',
+                            'Zaten bir hesabın var mı?? ',
                             style: TextStyle(
                               color: Colors.black45,
                             ),
