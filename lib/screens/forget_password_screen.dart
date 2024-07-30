@@ -10,10 +10,106 @@ class ForgetPage extends StatefulWidget {
 }
 
 class _ForgetPageState extends State<ForgetPage> {
+  final _formKey = GlobalKey<FormState>();
+  final TextEditingController _resetCodeController = TextEditingController();
+
+  void _sendResetCode() {
+    if (_formKey.currentState?.validate() ?? false) {
+      Navigator.push(
+        context,
+        MaterialPageRoute(
+          builder: (context) => const ForgetPasswordScreen(),
+        ),
+      );
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
-    // TODO: implement build
-    throw UnimplementedError();
+    return CustomScaffold(
+      child: Column(
+        children: [
+          const Expanded(
+            flex: 1,
+            child: SizedBox(
+              height: 10,
+            ),
+          ),
+          Expanded(
+            flex: 7,
+            child: Container(
+              padding: const EdgeInsets.fromLTRB(25.0, 50.0, 25.0, 20.0),
+              decoration: const BoxDecoration(
+                color: Colors.white,
+                borderRadius: BorderRadius.only(
+                  topLeft: Radius.circular(40.0),
+                  topRight: Radius.circular(40.0),
+                ),
+              ),
+              child: SingleChildScrollView(
+                child: Form(
+                  key: _formKey,
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.center,
+                    children: [
+                      Text(
+                        'Şifremi Unuttum',
+                        style: TextStyle(
+                          fontSize: 30.0,
+                          fontWeight: FontWeight.w900,
+                          color: lightColorScheme.primary,
+                        ),
+                      ),
+                      const SizedBox(
+                        height: 40.0,
+                      ),
+                      TextFormField(
+                        controller: _resetCodeController,
+                        validator: (value) {
+                          if (value == null || value.isEmpty) {
+                            return 'Lütfen E-Mail adresinizi girin!';
+                          }
+                          return null;
+                        },
+                        decoration: InputDecoration(
+                          label: const Text('E-Mail Adresiniz'),
+                          hintText: 'E-Mail adresinizi yazınız',
+                          hintStyle: const TextStyle(
+                            color: Colors.black26,
+                          ),
+                          border: OutlineInputBorder(
+                            borderSide: const BorderSide(
+                              color: Colors.black12,
+                            ),
+                            borderRadius: BorderRadius.circular(10),
+                          ),
+                          enabledBorder: OutlineInputBorder(
+                            borderSide: const BorderSide(
+                              color: Colors.black12,
+                            ),
+                            borderRadius: BorderRadius.circular(10),
+                          ),
+                        ),
+                      ),
+                      const SizedBox(height: 25.0),
+                      SizedBox(
+                        width: double.infinity,
+                        child: ElevatedButton(
+                          onPressed: _sendResetCode,
+                          child: const Text(
+                            "E-Mail gönder!",
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
   }
 }
 
@@ -41,10 +137,10 @@ class _ForgetPasswordScreenState extends State<ForgetPasswordScreen> {
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(content: Text('Şifreniz başarıyla güncellendi!')),
         );
-        // Şifre güncelleme işlemi sonrası yapılacaklar
+        // Şifre güncelleme işlemi sonrası yapılacaklar????
       } else {
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Şifreler uyuşmuyor!')),
+          const SnackBar(content: Text('Şifreler eşleşmiyor!')),
         );
       }
     }
@@ -178,9 +274,12 @@ class _ForgetPasswordScreenState extends State<ForgetPasswordScreen> {
                         ),
                       ),
                       const SizedBox(height: 25.0),
-                      ElevatedButton(
-                        onPressed: _resetPassword,
-                        child: const Text('Şifreyi Yenile'),
+                      SizedBox(
+                        width: double.infinity,
+                        child: ElevatedButton(
+                          onPressed: _resetPassword,
+                          child: const Text('Şifreyi Yenile'),
+                        ),
                       ),
                     ],
                   ),

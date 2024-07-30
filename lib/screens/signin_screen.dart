@@ -150,8 +150,7 @@ class _SignInScreenState extends State<SignInScreen> {
                                 Navigator.push(
                                   context,
                                   MaterialPageRoute(
-                                    builder: (e) =>
-                                        const ForgetPasswordScreen(),
+                                    builder: (e) => const ForgetPage(),
                                   ),
                                 );
                               }),
@@ -163,7 +162,7 @@ class _SignInScreenState extends State<SignInScreen> {
                       SizedBox(
                         width: double.infinity,
                         child: ElevatedButton(
-                          onPressed: () {},
+                          onPressed: () {}, // işlev eklenecek
                           child: const Text('Giriş'),
                         ),
                       ),
