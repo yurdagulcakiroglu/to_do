@@ -57,13 +57,13 @@ class _SignInScreenState extends State<SignInScreen> {
                       TextFormField(
                         validator: (value) {
                           if (value == null || value.isEmpty) {
-                            return 'Lütfen Email Girin';
+                            return 'Lütfen Bir Email Girin';
                           }
                           return null;
                         },
                         decoration: InputDecoration(
                           label: const Text('Email'),
-                          hintText: 'Enter Email',
+                          hintText: 'E-Mailinizi Girin',
                           hintStyle: const TextStyle(
                             color: Colors.black26,
                           ),
@@ -89,13 +89,13 @@ class _SignInScreenState extends State<SignInScreen> {
                         obscuringCharacter: '*',
                         validator: (value) {
                           if (value == null || value.isEmpty) {
-                            return 'Lütfen Parola Girin';
+                            return 'Lütfen Bir Parola Girin';
                           }
                           return null;
                         },
                         decoration: InputDecoration(
                           label: const Text('Parola'),
-                          hintText: 'Enter Password',
+                          hintText: 'Parolanızı girin',
                           hintStyle: const TextStyle(
                             color: Colors.black26,
                           ),

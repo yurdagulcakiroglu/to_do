@@ -46,7 +46,7 @@ class _SignUpScreenState extends State<SignUpScreen> {
                     children: [
                       // get started text
                       Text(
-                        'Get Started',
+                        'Hadi Başlayalım',
                         style: TextStyle(
                           fontSize: 30.0,
                           fontWeight: FontWeight.w900,
@@ -65,7 +65,7 @@ class _SignUpScreenState extends State<SignUpScreen> {
                           return null;
                         },
                         decoration: InputDecoration(
-                          label: const Text('isim-Soyisim'),
+                          label: const Text('İsim-Soyisim'),
                           hintText: 'İsim-Soyisminizi Girin',
                           hintStyle: const TextStyle(
                             color: Colors.black26,
@@ -96,8 +96,8 @@ class _SignUpScreenState extends State<SignUpScreen> {
                           return null;
                         },
                         decoration: InputDecoration(
-                          label: const Text('Email'),
-                          hintText: 'Email Girin',
+                          label: const Text('E-mail'),
+                          hintText: 'E-mailinizi Girin',
                           hintStyle: const TextStyle(
                             color: Colors.black26,
                           ),
@@ -130,7 +130,7 @@ class _SignUpScreenState extends State<SignUpScreen> {
                         },
                         decoration: InputDecoration(
                           label: const Text('Parola'),
-                          hintText: 'Enter Password',
+                          hintText: 'Parolanızı Girin',
                           hintStyle: const TextStyle(
                             color: Colors.black26,
                           ),
@@ -163,13 +163,21 @@ class _SignUpScreenState extends State<SignUpScreen> {
                             },
                             activeColor: lightColorScheme.primary,
                           ),
-                          const Text(
-                            'Kişisel verilerin ',
-                            style: TextStyle(
-                              fontWeight: FontWeight.bold,
-                              color: Color.fromARGB(255, 83, 120, 215),
-                            ),
-                          ),
+                          GestureDetector(
+                              child: Text(
+                                'Kişisel verilerin ',
+                                style: TextStyle(
+                                    fontWeight: FontWeight.bold,
+                                    color: lightColorScheme.primary),
+                              ),
+                              onTap: () {
+                                Navigator.push(
+                                  context,
+                                  MaterialPageRoute(
+                                    builder: (e) => const (),
+                                  ),
+                                );
+                              }),
                           const Text(
                             'işlenmesini kabul ediyorum.',
                             style: TextStyle(

@@ -189,7 +189,7 @@ class _ForgetPasswordScreenState extends State<ForgetPasswordScreen> {
                         controller: _resetCodeController,
                         validator: (value) {
                           if (value == null || value.isEmpty) {
-                            return 'Lütfen sıfırlama kodunu girin';
+                            return 'Lütfen sıfırlama kodunu girin!';
                           }
                           return null;
                         },
@@ -219,7 +219,7 @@ class _ForgetPasswordScreenState extends State<ForgetPasswordScreen> {
                         obscureText: true,
                         validator: (value) {
                           if (value == null || value.isEmpty) {
-                            return 'Lütfen yeni şifrenizi girin';
+                            return 'Lütfen yeni şifrenizi girin!';
                           }
                           return null;
                         },
@@ -249,7 +249,7 @@ class _ForgetPasswordScreenState extends State<ForgetPasswordScreen> {
                         obscureText: true,
                         validator: (value) {
                           if (value == null || value.isEmpty) {
-                            return 'Lütfen yeni şifrenizi doğrulayın';
+                            return 'Lütfen yeni şifrenizi doğrulayın!';
                           }
                           return null;
                         },
