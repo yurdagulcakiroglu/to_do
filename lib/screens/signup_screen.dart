@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart' show rootBundle;
 import 'package:to_do/category_page.dart';
 import 'package:to_do/theme/theme.dart';
 import 'package:to_do/widgets/custom_scaffold.dart';
@@ -14,7 +15,7 @@ class SignUpScreen extends StatefulWidget {
 
 class _SignUpScreenState extends State<SignUpScreen> {
   final _formSignupKey = GlobalKey<FormState>();
-  bool agreePersonalData = true;
+  bool agreePersonalData = false;
 
   @override
   Widget build(BuildContext context) {
@@ -60,7 +61,7 @@ class _SignUpScreenState extends State<SignUpScreen> {
                       TextFormField(
                         validator: (value) {
                           if (value == null || value.isEmpty) {
-                            return 'Lütfen İsim-Soyisminizi Girin ';
+                            return 'Lütfen İsim-Soyisminizi Girin';
                           }
                           return null;
                         },
@@ -164,20 +165,17 @@ class _SignUpScreenState extends State<SignUpScreen> {
                             activeColor: lightColorScheme.primary,
                           ),
                           GestureDetector(
-                              child: Text(
-                                'Kişisel verilerin ',
-                                style: TextStyle(
-                                    fontWeight: FontWeight.bold,
-                                    color: lightColorScheme.primary),
+                            onTap: () {
+                              _showKvkkDialog(context);
+                            },
+                            child: Text(
+                              'Kişisel verilerin ',
+                              style: TextStyle(
+                                fontWeight: FontWeight.bold,
+                                color: lightColorScheme.primary,
                               ),
-                              onTap: () {
-                                Navigator.push(
-                                  context,
-                                  MaterialPageRoute(
-                                    builder: (e) => const (),
-                                  ),
-                                );
-                              }),
+                            ),
+                          ),
                           const Text(
                             'işlenmesini kabul ediyorum.',
                             style: TextStyle(
@@ -206,8 +204,9 @@ class _SignUpScreenState extends State<SignUpScreen> {
                             } else if (!agreePersonalData) {
                               ScaffoldMessenger.of(context).showSnackBar(
                                 const SnackBar(
-                                    content: Text(
-                                        'Lütfen kişisel verilerinizin işlenmesine onay verin!')),
+                                  content: Text(
+                                      'Lütfen kişisel verilerinizin işlenmesine onay verin!'),
+                                ),
                               );
                             }
                           },
@@ -303,7 +302,7 @@ class _SignUpScreenState extends State<SignUpScreen> {
                               );
                             },
                             child: Text(
-                              'Sign in',
+                              'Giriş Yap',
                               style: TextStyle(
                                 fontWeight: FontWeight.bold,
                                 color: lightColorScheme.primary,
@@ -323,6 +322,37 @@ class _SignUpScreenState extends State<SignUpScreen> {
           ),
         ],
       ),
+    );
+  }
+
+  Future<void> _showKvkkDialog(BuildContext context) async {
+    // Dosya içeriğini oku
+    final kvkkContent =
+        await rootBundle.loadString('assets/kvkk_text/kvkk.txt');
+
+    // Dialog'u göster
+    showDialog(
+      context: context,
+      builder: (BuildContext context) {
+        return AlertDialog(
+          title: const Text('Kişisel Verilerin İşlenmesi'),
+          content: SingleChildScrollView(
+            child: ListBody(
+              children: <Widget>[
+                Text(kvkkContent),
+              ],
+            ),
+          ),
+          actions: <Widget>[
+            TextButton(
+              child: const Text('Tamam'),
+              onPressed: () {
+                Navigator.of(context).pop();
+              },
+            ),
+          ],
+        );
+      },
     );
   }
 }
