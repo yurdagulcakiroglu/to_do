@@ -146,16 +146,30 @@ class _MyHomePageState extends State<MyHomePage> {
     return Scaffold(
       appBar: AppBar(
         title: Text(widget.category.name),
+        flexibleSpace: Container(
+          decoration: const BoxDecoration(
+            image: DecorationImage(
+              image: AssetImage('assets/images/bg1.png'),
+              fit: BoxFit.cover,
+            ),
+          ),
+        ),
       ),
       body: Column(
         children: <Widget>[
           Padding(
             padding: const EdgeInsets.all(8.0),
-            child: TextField(
-              onChanged: _filterList,
-              decoration: const InputDecoration(
-                labelText: 'Ara',
-                prefixIcon: Icon(Icons.search),
+            child: SizedBox(
+              height:
+                  40.0, // TextField'ın yüksekliğini buradan ayarlayabilirsiniz
+              child: TextField(
+                onChanged: _filterList,
+                decoration: const InputDecoration(
+                  hintText: 'Ara',
+                  prefixIcon: Icon(Icons.search),
+                  contentPadding: EdgeInsets.symmetric(
+                      vertical: 10.0), // İçerik padding'i ayarlama
+                ),
               ),
             ),
           ),

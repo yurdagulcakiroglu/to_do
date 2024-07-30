@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import 'package:to_do/theme/theme.dart';
 import 'my_home_page.dart';
 import 'profile.dart';
 import 'settings.dart';
@@ -130,7 +131,14 @@ class _CategoryPageState extends State<CategoryPage> {
     return Scaffold(
       appBar: AppBar(
         title: const Text('Kategoriler'),
-        backgroundColor: const Color.fromARGB(255, 216, 198, 251),
+        flexibleSpace: Container(
+          decoration: const BoxDecoration(
+            image: DecorationImage(
+              image: AssetImage('assets/images/bg1.png'),
+              fit: BoxFit.cover,
+            ),
+          ),
+        ),
         centerTitle: true,
       ),
       drawer: Drawer(
@@ -139,7 +147,10 @@ class _CategoryPageState extends State<CategoryPage> {
           children: <Widget>[
             const DrawerHeader(
               decoration: BoxDecoration(
-                color: Color.fromARGB(255, 216, 198, 251),
+                image: DecorationImage(
+                  image: AssetImage('assets/images/bg1.png'),
+                  fit: BoxFit.cover,
+                ),
               ),
               child: Text(
                 'Menü',

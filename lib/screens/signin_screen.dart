@@ -44,7 +44,7 @@ class _SignInScreenState extends State<SignInScreen> {
                     crossAxisAlignment: CrossAxisAlignment.center,
                     children: [
                       Text(
-                        'Welcome back',
+                        'Tekrar hoş geldiniz',
                         style: TextStyle(
                           fontSize: 30.0,
                           fontWeight: FontWeight.w900,
@@ -62,7 +62,7 @@ class _SignInScreenState extends State<SignInScreen> {
                           return null;
                         },
                         decoration: InputDecoration(
-                          label: const Text('Email'),
+                          label: const Text('E-mail'),
                           hintText: 'E-Mailinizi Girin',
                           hintStyle: const TextStyle(
                             color: Colors.black26,

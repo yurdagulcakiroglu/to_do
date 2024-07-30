@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:to_do/theme/theme.dart';
 import 'package:to_do/widgets/custom_scaffold.dart';
+import 'package:to_do/category_page.dart';
 
 class ForgetPage extends StatefulWidget {
   const ForgetPage({super.key});
@@ -136,6 +137,9 @@ class _ForgetPasswordScreenState extends State<ForgetPasswordScreen> {
         // Burada şifreyi güncelleme işlemini gerçekleştirin
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(content: Text('Şifreniz başarıyla güncellendi!')),
+        );
+        Navigator.of(context).pushReplacement(
+          MaterialPageRoute(builder: (context) => const CategoryPage()),
         );
         // Şifre güncelleme işlemi sonrası yapılacaklar????
       } else {

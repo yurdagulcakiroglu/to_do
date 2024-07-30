@@ -44,7 +44,7 @@ class WelcomeScreen extends StatelessWidget {
                                 fontWeight: FontWeight.w600,
                               )),
                           TextSpan(
-                              text: '\nWelcome Back!',
+                              text: '\nHoş Geldiniz!',
                               style: TextStyle(
                                 fontSize: 20,
                               ))

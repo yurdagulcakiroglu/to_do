@@ -106,7 +106,14 @@ class _ProfilePageState extends State<ProfilePage> {
     return Scaffold(
       appBar: AppBar(
         title: const Text('Profil'),
-        backgroundColor: const Color.fromARGB(255, 216, 198, 251),
+        flexibleSpace: Container(
+          decoration: const BoxDecoration(
+            image: DecorationImage(
+              image: AssetImage('assets/images/bg1.png'),
+              fit: BoxFit.cover,
+            ),
+          ),
+        ),
         centerTitle: true,
       ),
       body: SingleChildScrollView(
