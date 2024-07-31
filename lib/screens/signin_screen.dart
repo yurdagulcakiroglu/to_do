@@ -15,6 +15,7 @@ class SignInScreen extends StatefulWidget {
 class _SignInScreenState extends State<SignInScreen> {
   final _formSignInKey = GlobalKey<FormState>();
   bool rememberPassword = true;
+
   @override
   Widget build(BuildContext context) {
     return CustomScaffold(
@@ -162,7 +163,9 @@ class _SignInScreenState extends State<SignInScreen> {
                       SizedBox(
                         width: double.infinity,
                         child: ElevatedButton(
-                          onPressed: () {}, // işlev eklenecek
+                          onPressed: () {
+                            if (_formSignInKey.currentState!.validate()) {}
+                          },
                           child: const Text('Giriş'),
                         ),
                       ),

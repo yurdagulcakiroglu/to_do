@@ -11,7 +11,7 @@ class SettingsPage extends StatelessWidget {
         flexibleSpace: Container(
           decoration: const BoxDecoration(
             image: DecorationImage(
-              image: AssetImage('assets/images/bg1.png'),
+              image: AssetImage('assets/images/bg2.png'),
               fit: BoxFit.cover,
             ),
           ),
