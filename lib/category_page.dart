@@ -22,6 +22,7 @@ class _CategoryPageState extends State<CategoryPage> {
       context: context,
       builder: (BuildContext context) {
         return AlertDialog(
+          backgroundColor: const Color(0xFFF5F5F5),
           title: const Text('Yeni Kategori Ekle'),
           content: TextField(
             controller: controller,
@@ -65,6 +66,7 @@ class _CategoryPageState extends State<CategoryPage> {
       context: context,
       builder: (BuildContext context) {
         return AlertDialog(
+          backgroundColor: const Color(0xFFF5F5F5),
           title: const Text('Kategori Düzenle'),
           content: TextField(
             controller: controller,
@@ -129,6 +131,7 @@ class _CategoryPageState extends State<CategoryPage> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
+      backgroundColor: const Color(0xFFF5F5F5),
       appBar: AppBar(
         title: const Text('Kategoriler'),
         flexibleSpace: Container(
@@ -142,6 +145,7 @@ class _CategoryPageState extends State<CategoryPage> {
         centerTitle: true,
       ),
       drawer: Drawer(
+        backgroundColor: const Color(0xFFF5F5F5),
         child: ListView(
           padding: EdgeInsets.zero,
           children: <Widget>[

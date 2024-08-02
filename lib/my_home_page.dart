@@ -37,6 +37,7 @@ class _MyHomePageState extends State<MyHomePage> {
       context: context,
       builder: (BuildContext context) {
         return AlertDialog(
+          backgroundColor: const Color(0xFFF5F5F5),
           title: const Text('Ekle'),
           content: TextField(
             controller: controller,
@@ -144,6 +145,7 @@ class _MyHomePageState extends State<MyHomePage> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
+      backgroundColor: const Color(0xFFF5F5F5),
       appBar: AppBar(
         title: Text(widget.category.name),
         flexibleSpace: Container(
@@ -205,6 +207,7 @@ class _MyHomePageState extends State<MyHomePage> {
         ],
       ),
       floatingActionButton: FloatingActionButton(
+        backgroundColor: const Color(0xFFF5F5F5),
         onPressed: _showAddItemDialog,
         tooltip: 'Ekle',
         child: const Icon(Icons.add),

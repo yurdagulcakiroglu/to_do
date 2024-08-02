@@ -5,6 +5,7 @@ import 'profile.dart';
 import 'settings.dart';
 import 'package:to_do/screens/welcome_screen.dart';
 import 'package:to_do/theme/theme.dart';
+import 'firebase_options.dart';
 
 void main() {
   runApp(const Deneme());
