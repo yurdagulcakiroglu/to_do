@@ -3,7 +3,9 @@ import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 import 'package:to_do/screens/signup_screen.dart';
 import 'package:to_do/widgets/custom_scaffold.dart';
 import 'package:to_do/screens/forget_password_screen.dart';
+import 'package:firebase_auth/firebase_auth.dart'; // firebase_auth import ediliyor
 import '../theme/theme.dart';
+import '../services/auth.dart'; // auth.dart dosyasını ekliyoruz
 
 class SignInScreen extends StatefulWidget {
   const SignInScreen({super.key});
@@ -14,7 +16,32 @@ class SignInScreen extends StatefulWidget {
 
 class _SignInScreenState extends State<SignInScreen> {
   final _formSignInKey = GlobalKey<FormState>();
+  final TextEditingController _emailController = TextEditingController();
+  final TextEditingController _passwordController = TextEditingController();
   bool rememberPassword = true;
+
+  final AuthService _auth = AuthService(); // AuthService örneği oluşturuyoruz
+
+  Future<void> _signIn() async {
+    if (_formSignInKey.currentState!.validate()) {
+      User? user = await _auth.signInWithEmailAndPassword(
+        _emailController.text,
+        _passwordController.text,
+      );
+      if (user != null) {
+        // Başarılı giriş işlemi
+        // Burada yönlendirme yapabilirsiniz örneğin: Navigator.pushReplacementNamed(context, '/home');
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Giriş başarılı!')),
+        );
+      } else {
+        // Hata mesajı göster
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Giriş başarısız!')),
+        );
+      }
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -56,6 +83,7 @@ class _SignInScreenState extends State<SignInScreen> {
                         height: 40.0,
                       ),
                       TextFormField(
+                        controller: _emailController,
                         validator: (value) {
                           if (value == null || value.isEmpty) {
                             return 'Lütfen Bir Email Girin';
@@ -86,6 +114,7 @@ class _SignInScreenState extends State<SignInScreen> {
                         height: 25.0,
                       ),
                       TextFormField(
+                        controller: _passwordController,
                         obscureText: true,
                         obscuringCharacter: '*',
                         validator: (value) {
@@ -163,9 +192,7 @@ class _SignInScreenState extends State<SignInScreen> {
                       SizedBox(
                         width: double.infinity,
                         child: ElevatedButton(
-                          onPressed: () {
-                            if (_formSignInKey.currentState!.validate()) {}
-                          },
+                          onPressed: _signIn,
                           child: const Text('Giriş'),
                         ),
                       ),
