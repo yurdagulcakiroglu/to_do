@@ -3,29 +3,46 @@ import 'package:firebase_auth/firebase_auth.dart';
 class AuthService {
   final FirebaseAuth _auth = FirebaseAuth.instance;
 
-  // Email ve şifre ile giriş yapma
+  // Email ve Parola ile Kayıt Olma Metodu
+  Future<User?> signUpWithEmailAndPassword(
+      String email, String password) async {
+    try {
+      UserCredential result = await _auth.createUserWithEmailAndPassword(
+        email: email,
+        password: password,
+      );
+      User? user = result.user;
+      return user;
+    } on FirebaseAuthException catch (e) {
+      print("Hata: ${e.message}");
+      return null;
+    } catch (e) {
+      print("Bilinmeyen Hata: $e");
+      return null;
+    }
+  }
+
+  // Email ve Parola ile Giriş Yapma Metodu
   Future<User?> signInWithEmailAndPassword(
       String email, String password) async {
     try {
       UserCredential result = await _auth.signInWithEmailAndPassword(
-          email: email, password: password);
+        email: email,
+        password: password,
+      );
       User? user = result.user;
       return user;
+    } on FirebaseAuthException catch (e) {
+      print("Hata: ${e.message}");
+      return null;
     } catch (e) {
-      print(e.toString());
+      print("Bilinmeyen Hata: $e");
       return null;
     }
   }
 
-  // Kullanıcıyı çıkış yapma
+  // Oturum Kapatma Metodu
   Future<void> signOut() async {
-    try {
-      return await _auth.signOut();
-    } catch (e) {
-      print(e.toString());
-      return null;
-    }
+    await _auth.signOut();
   }
-
-  // Diğer authentication işlemleri burada tanımlanabilir
 }

@@ -5,6 +5,8 @@ import 'package:to_do/theme/theme.dart';
 import 'package:to_do/widgets/custom_scaffold.dart';
 import 'package:to_do/screens/signin_screen.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
+import 'package:firebase_auth/firebase_auth.dart';
+import '../services/auth.dart';
 
 class SignUpScreen extends StatefulWidget {
   const SignUpScreen({super.key});
@@ -15,7 +17,44 @@ class SignUpScreen extends StatefulWidget {
 
 class _SignUpScreenState extends State<SignUpScreen> {
   final _formSignupKey = GlobalKey<FormState>();
+  final TextEditingController _emailController = TextEditingController();
+  final TextEditingController _passwordController = TextEditingController();
   bool agreePersonalData = false;
+
+  final AuthService _auth = AuthService(); // AuthService örneği oluşturuyoruz
+
+  Future<void> _signUp() async {
+    if (_formSignupKey.currentState!.validate() && agreePersonalData) {
+      User? user = await _auth.signUpWithEmailAndPassword(
+        _emailController.text,
+        _passwordController.text,
+      );
+      if (user != null) {
+        // Başarılı kayıt işlemi
+        Navigator.push(
+          context,
+          MaterialPageRoute(
+            builder: (context) => const CategoryPage(),
+          ),
+        );
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Kayıt başarılı!')),
+        );
+      } else {
+        // Hata mesajı göster
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+              content: Text('Kayıt başarısız! Lütfen tekrar deneyin.')),
+        );
+      }
+    } else if (!agreePersonalData) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Lütfen kişisel verilerinizin işlenmesine onay verin!'),
+        ),
+      );
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -90,6 +129,7 @@ class _SignUpScreenState extends State<SignUpScreen> {
                       ),
                       // email
                       TextFormField(
+                        controller: _emailController,
                         validator: (value) {
                           if (value == null || value.isEmpty) {
                             return 'Lütfen Email Girin';
@@ -121,6 +161,7 @@ class _SignUpScreenState extends State<SignUpScreen> {
                       ),
                       // password
                       TextFormField(
+                        controller: _passwordController,
                         obscureText: true,
                         obscuringCharacter: '*',
                         validator: (value) {
@@ -191,25 +232,7 @@ class _SignUpScreenState extends State<SignUpScreen> {
                       SizedBox(
                         width: double.infinity,
                         child: ElevatedButton(
-                          onPressed: () {
-                            if (_formSignupKey.currentState!.validate() &&
-                                agreePersonalData) {
-                              // Navigate to CategoryPage
-                              Navigator.push(
-                                context,
-                                MaterialPageRoute(
-                                  builder: (context) => const CategoryPage(),
-                                ),
-                              );
-                            } else if (!agreePersonalData) {
-                              ScaffoldMessenger.of(context).showSnackBar(
-                                const SnackBar(
-                                  content: Text(
-                                      'Lütfen kişisel verilerinizin işlenmesine onay verin!'),
-                                ),
-                              );
-                            }
-                          },
+                          onPressed: _signUp,
                           child: const Text('Kaydol'),
                         ),
                       ),

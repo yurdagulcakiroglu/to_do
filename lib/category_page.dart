@@ -4,6 +4,7 @@ import 'package:to_do/theme/theme.dart';
 import 'my_home_page.dart';
 import 'profile.dart';
 import 'settings.dart';
+import '../services/auth.dart'; // AuthService import edilmesi
 
 class CategoryPage extends StatefulWidget {
   const CategoryPage({super.key});
@@ -14,6 +15,7 @@ class CategoryPage extends StatefulWidget {
 
 class _CategoryPageState extends State<CategoryPage> {
   final List<Category> categories = [];
+  final AuthService _auth = AuthService(); // AuthService örneği oluşturulması
 
   void _showAddCategoryDialog() {
     final TextEditingController controller = TextEditingController();
@@ -128,6 +130,12 @@ class _CategoryPageState extends State<CategoryPage> {
     setState(() {}); // Geri dönüldüğünde kategorileri yenile
   }
 
+  Future<void> _signOut() async {
+    await _auth.signOut();
+    Navigator.pushReplacementNamed(
+        context, '/signin'); // Giriş ekranına yönlendirme
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -187,7 +195,7 @@ class _CategoryPageState extends State<CategoryPage> {
               leading: const Icon(Icons.logout),
               title: const Text('Çıkış'),
               onTap: () {
-                // Çıkış işlemi
+                _signOut(); // Çıkış işlemi
               },
             ),
           ],

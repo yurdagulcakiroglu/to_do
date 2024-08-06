@@ -5,7 +5,9 @@ import 'package:to_do/widgets/custom_scaffold.dart';
 import 'package:to_do/screens/forget_password_screen.dart';
 import 'package:firebase_auth/firebase_auth.dart'; // firebase_auth import ediliyor
 import '../theme/theme.dart';
-import '../services/auth.dart'; // auth.dart dosyasını ekliyoruz
+import '../services/auth.dart';
+import 'package:to_do/category_page.dart';
+import 'package:google_sign_in/google_sign_in.dart';
 
 class SignInScreen extends StatefulWidget {
   const SignInScreen({super.key});
@@ -29,6 +31,13 @@ class _SignInScreenState extends State<SignInScreen> {
         _passwordController.text,
       );
       if (user != null) {
+        // Başarılı kayıt işlemi
+        Navigator.push(
+          context,
+          MaterialPageRoute(
+            builder: (context) => const CategoryPage(),
+          ),
+        );
         // Başarılı giriş işlemi
         // Burada yönlendirme yapabilirsiniz örneğin: Navigator.pushReplacementNamed(context, '/home');
         ScaffoldMessenger.of(context).showSnackBar(
