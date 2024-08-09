@@ -21,30 +21,42 @@ class _SignUpScreenState extends State<SignUpScreen> {
   final TextEditingController _passwordController = TextEditingController();
   bool agreePersonalData = false;
 
-  final AuthService _auth = AuthService(); // AuthService örneği oluşturuyoruz
+  final AuthService _auth = AuthService();
 
   Future<void> _signUp() async {
     if (_formSignupKey.currentState!.validate() && agreePersonalData) {
-      User? user = await _auth.signUpWithEmailAndPassword(
-        _emailController.text,
-        _passwordController.text,
-      );
-      if (user != null) {
-        // Başarılı kayıt işlemi
-        Navigator.push(
-          context,
-          MaterialPageRoute(
-            builder: (context) => const CategoryPage(),
+      try {
+        User? user = await _auth.signUpWithEmailAndPassword(
+          _emailController.text,
+          _passwordController.text,
+        );
+
+        if (user != null) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(
+              content:
+                  Text('Kayıt başarılı! Lütfen e-posta adresinizi doğrulayın.'),
+            ),
+          );
+          Navigator.push(
+            context,
+            MaterialPageRoute(
+              builder: (context) => const SignInScreen(),
+            ),
+          );
+        } else {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(
+              content: Text('Kayıt başarısız! Lütfen tekrar deneyin.'),
+            ),
+          );
+        }
+      } catch (e) {
+        // Hata durumunu yakalayıp kullanıcıya gösteriyoruz
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Kayıt başarısız! Hata: ${e.toString()}'),
           ),
-        );
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Kayıt başarılı!')),
-        );
-      } else {
-        // Hata mesajı göster
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-              content: Text('Kayıt başarısız! Lütfen tekrar deneyin.')),
         );
       }
     } else if (!agreePersonalData) {

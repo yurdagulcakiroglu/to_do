@@ -3,7 +3,8 @@ import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 import 'package:to_do/screens/signup_screen.dart';
 import 'package:to_do/widgets/custom_scaffold.dart';
 import 'package:to_do/screens/forget_password_screen.dart';
-import 'package:firebase_auth/firebase_auth.dart'; // firebase_auth import ediliyor
+import 'package:firebase_auth/firebase_auth.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
 import '../theme/theme.dart';
 import '../services/auth.dart';
 import 'package:to_do/category_page.dart';
@@ -22,7 +23,7 @@ class _SignInScreenState extends State<SignInScreen> {
   final TextEditingController _passwordController = TextEditingController();
   bool rememberPassword = true;
 
-  final AuthService _auth = AuthService(); // AuthService örneği oluşturuyoruz
+  final AuthService _auth = AuthService();
 
   Future<void> _signIn() async {
     if (_formSignInKey.currentState!.validate()) {
@@ -31,25 +32,101 @@ class _SignInScreenState extends State<SignInScreen> {
         _passwordController.text,
       );
       if (user != null) {
-        // Başarılı kayıt işlemi
-        Navigator.push(
-          context,
-          MaterialPageRoute(
-            builder: (context) => const CategoryPage(),
-          ),
-        );
-        // Başarılı giriş işlemi
-        // Burada yönlendirme yapabilirsiniz örneğin: Navigator.pushReplacementNamed(context, '/home');
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Giriş başarılı!')),
-        );
+        if (!user.emailVerified) {
+          await user.sendEmailVerification();
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(
+                content: Text('E-posta doğrulamanızı yapmalısınız!')),
+          );
+        } else {
+          await _saveUserData(user);
+          Navigator.push(
+            context,
+            MaterialPageRoute(builder: (context) => const CategoryPage()),
+          );
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(content: Text('Giriş başarılı!')),
+          );
+        }
       } else {
-        // Hata mesajı göster
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Giriş başarısız!')),
-        );
+        _showUserNotFoundDialog();
       }
     }
+  }
+
+  Future<void> _signInWithGoogle() async {
+    try {
+      User? user = await _auth.signInWithGoogle();
+
+      if (user != null) {
+        if (!user.emailVerified) {
+          await user.sendEmailVerification();
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(
+                content: Text('E-posta doğrulamanızı yapmalısınız!')),
+          );
+        } else {
+          await _saveUserData(user);
+          Navigator.push(
+            context,
+            MaterialPageRoute(builder: (context) => const CategoryPage()),
+          );
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(content: Text('Google ile giriş başarılı!')),
+          );
+        }
+      } else {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Google ile giriş başarısız!')),
+        );
+      }
+    } catch (e) {
+      print('Google giriş hatası: $e');
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+            content: Text('Google ile giriş sırasında bir hata oluştu!')),
+      );
+    }
+  }
+
+  Future<void> _saveUserData(User user) async {
+    DocumentReference userDoc =
+        FirebaseFirestore.instance.collection('users').doc(user.uid);
+
+    userDoc.get().then((docSnapshot) {
+      if (!docSnapshot.exists) {
+        userDoc.set({
+          'name': user.displayName ?? 'Anonim',
+          'email': user.email,
+          'profilePicture': user.photoURL,
+        });
+      }
+    });
+  }
+
+  void _showUserNotFoundDialog() {
+    showDialog(
+      context: context,
+      builder: (BuildContext context) {
+        return AlertDialog(
+          title: const Text('Hata'),
+          content:
+              const Text('Bu isim/e-mail ile kayıtlı kullanıcı bulunamadı.'),
+          actions: [
+            TextButton(
+              onPressed: () {
+                Navigator.of(context).pop();
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(builder: (context) => const SignUpScreen()),
+                );
+              },
+              child: const Text('Kaydol'),
+            ),
+          ],
+        );
+      },
+    );
   }
 
   @override
@@ -57,12 +134,7 @@ class _SignInScreenState extends State<SignInScreen> {
     return CustomScaffold(
       child: Column(
         children: [
-          const Expanded(
-            flex: 1,
-            child: SizedBox(
-              height: 10,
-            ),
-          ),
+          const Expanded(flex: 1, child: SizedBox(height: 10)),
           Expanded(
             flex: 7,
             child: Container(
@@ -88,9 +160,7 @@ class _SignInScreenState extends State<SignInScreen> {
                           color: lightColorScheme.primary,
                         ),
                       ),
-                      const SizedBox(
-                        height: 40.0,
-                      ),
+                      const SizedBox(height: 40.0),
                       TextFormField(
                         controller: _emailController,
                         validator: (value) {
@@ -102,26 +172,18 @@ class _SignInScreenState extends State<SignInScreen> {
                         decoration: InputDecoration(
                           label: const Text('E-mail'),
                           hintText: 'E-Mailinizi Girin',
-                          hintStyle: const TextStyle(
-                            color: Colors.black26,
-                          ),
+                          hintStyle: const TextStyle(color: Colors.black26),
                           border: OutlineInputBorder(
-                            borderSide: const BorderSide(
-                              color: Colors.black12, // Default border color
-                            ),
+                            borderSide: const BorderSide(color: Colors.black12),
                             borderRadius: BorderRadius.circular(10),
                           ),
                           enabledBorder: OutlineInputBorder(
-                            borderSide: const BorderSide(
-                              color: Colors.black12, // Default border color
-                            ),
+                            borderSide: const BorderSide(color: Colors.black12),
                             borderRadius: BorderRadius.circular(10),
                           ),
                         ),
                       ),
-                      const SizedBox(
-                        height: 25.0,
-                      ),
+                      const SizedBox(height: 25.0),
                       TextFormField(
                         controller: _passwordController,
                         obscureText: true,
@@ -135,26 +197,18 @@ class _SignInScreenState extends State<SignInScreen> {
                         decoration: InputDecoration(
                           label: const Text('Parola'),
                           hintText: 'Parolanızı girin',
-                          hintStyle: const TextStyle(
-                            color: Colors.black26,
-                          ),
+                          hintStyle: const TextStyle(color: Colors.black26),
                           border: OutlineInputBorder(
-                            borderSide: const BorderSide(
-                              color: Colors.black12, // Default border color
-                            ),
+                            borderSide: const BorderSide(color: Colors.black12),
                             borderRadius: BorderRadius.circular(10),
                           ),
                           enabledBorder: OutlineInputBorder(
-                            borderSide: const BorderSide(
-                              color: Colors.black12, // Default border color
-                            ),
+                            borderSide: const BorderSide(color: Colors.black12),
                             borderRadius: BorderRadius.circular(10),
                           ),
                         ),
                       ),
-                      const SizedBox(
-                        height: 25.0,
-                      ),
+                      const SizedBox(height: 25.0),
                       Row(
                         mainAxisAlignment: MainAxisAlignment.spaceBetween,
                         children: [
@@ -171,33 +225,30 @@ class _SignInScreenState extends State<SignInScreen> {
                               ),
                               const Text(
                                 'Beni Hatırla',
-                                style: TextStyle(
-                                  color: Colors.black45,
-                                ),
+                                style: TextStyle(color: Colors.black45),
                               ),
                             ],
                           ),
                           GestureDetector(
-                              child: Text(
-                                'Şifremi Unuttum?',
-                                style: TextStyle(
-                                  fontWeight: FontWeight.bold,
-                                  color: lightColorScheme.primary,
-                                ),
+                            child: Text(
+                              'Şifremi Unuttum?',
+                              style: TextStyle(
+                                fontWeight: FontWeight.bold,
+                                color: lightColorScheme.primary,
                               ),
-                              onTap: () {
-                                Navigator.push(
-                                  context,
-                                  MaterialPageRoute(
-                                    builder: (e) => const ForgetPage(),
-                                  ),
-                                );
-                              }),
+                            ),
+                            onTap: () {
+                              Navigator.push(
+                                context,
+                                MaterialPageRoute(
+                                  builder: (e) => const ForgetPage(),
+                                ),
+                              );
+                            },
+                          ),
                         ],
                       ),
-                      const SizedBox(
-                        height: 25.0,
-                      ),
+                      const SizedBox(height: 25.0),
                       SizedBox(
                         width: double.infinity,
                         child: ElevatedButton(
@@ -205,9 +256,7 @@ class _SignInScreenState extends State<SignInScreen> {
                           child: const Text('Giriş'),
                         ),
                       ),
-                      const SizedBox(
-                        height: 25.0,
-                      ),
+                      const SizedBox(height: 25.0),
                       Row(
                         mainAxisAlignment: MainAxisAlignment.center,
                         children: [
@@ -219,14 +268,10 @@ class _SignInScreenState extends State<SignInScreen> {
                           ),
                           const Padding(
                             padding: EdgeInsets.symmetric(
-                              vertical: 0,
-                              horizontal: 10,
-                            ),
+                                vertical: 0, horizontal: 10),
                             child: Text(
                               '...',
-                              style: TextStyle(
-                                color: Colors.black45,
-                              ),
+                              style: TextStyle(color: Colors.black45),
                             ),
                           ),
                           Expanded(
@@ -237,9 +282,7 @@ class _SignInScreenState extends State<SignInScreen> {
                           ),
                         ],
                       ),
-                      const SizedBox(
-                        height: 25.0,
-                      ),
+                      const SizedBox(height: 25.0),
                       Row(
                         mainAxisAlignment: MainAxisAlignment.spaceEvenly,
                         children: [
@@ -257,9 +300,7 @@ class _SignInScreenState extends State<SignInScreen> {
                           ),
                           IconButton(
                             icon: const FaIcon(FontAwesomeIcons.google),
-                            onPressed: () {
-                              // Google login action
-                            },
+                            onPressed: _signInWithGoogle, //google ile giriş
                           ),
                           IconButton(
                             icon: const FaIcon(FontAwesomeIcons.apple),
@@ -272,7 +313,7 @@ class _SignInScreenState extends State<SignInScreen> {
                       const SizedBox(
                         height: 25.0,
                       ),
-                      // don't have an account
+                      //giriş yapmaya çalışsan kullanıcının hesabı yoksaS
                       Row(
                         mainAxisAlignment: MainAxisAlignment.center,
                         children: [

@@ -1,5 +1,10 @@
 import 'package:flutter/material.dart';
-import 'package:shared_preferences/shared_preferences.dart';
+import 'package:firebase_auth/firebase_auth.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:firebase_storage/firebase_storage.dart';
+import 'package:image_picker/image_picker.dart';
+import 'dart:io';
+import 'dart:math';
 
 class ProfilePage extends StatefulWidget {
   const ProfilePage({super.key});
@@ -11,8 +16,15 @@ class ProfilePage extends StatefulWidget {
 class _ProfilePageState extends State<ProfilePage> {
   String _name = '';
   String _email = '';
-  String _phone = '';
-  String _address = '';
+  String? _profileImageUrl; // Nullable yapıldı
+  File? _imageFile;
+  final ImagePicker _picker = ImagePicker();
+  final TextEditingController _nameController = TextEditingController();
+  final TextEditingController _oldPasswordController = TextEditingController();
+  final TextEditingController _newPasswordController = TextEditingController();
+  final TextEditingController _confirmNewPasswordController =
+      TextEditingController();
+  final _formKey = GlobalKey<FormState>();
 
   @override
   void initState() {
@@ -21,37 +33,193 @@ class _ProfilePageState extends State<ProfilePage> {
   }
 
   Future<void> _loadProfile() async {
-    final SharedPreferences prefs = await SharedPreferences.getInstance();
-    setState(() {
-      _name = prefs.getString('name') ?? '';
-      _email = prefs.getString('email') ?? '';
-      _phone = prefs.getString('phone') ?? '';
-      _address = prefs.getString('address') ?? '';
-    });
+    User? user = FirebaseAuth.instance.currentUser;
+
+    if (user != null) {
+      try {
+        final DocumentSnapshot doc = await FirebaseFirestore.instance
+            .collection('users')
+            .doc(user.uid)
+            .get();
+
+        if (doc.exists) {
+          setState(() {
+            _name = doc['name'] ?? '';
+            _email = user.email ?? '';
+            _profileImageUrl = doc['profileImageUrl'];
+          });
+        } else {
+          print("Kullanıcı verisi bulunamadı");
+        }
+      } catch (e) {
+        print("Veri çekme hatası: $e");
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+              content: Text('Profil bilgileri alınırken bir hata oluştu.')),
+        );
+      }
+    } else {
+      print("Kullanıcı oturumu açmamış.");
+    }
   }
 
-  Future<void> _editProfile() async {
-    final TextEditingController nameController =
-        TextEditingController(text: _name);
-    final TextEditingController emailController =
-        TextEditingController(text: _email);
-    final TextEditingController phoneController =
-        TextEditingController(text: _phone);
-    final TextEditingController addressController =
-        TextEditingController(text: _address);
+  Future<void> _pickImage() async {
+    final pickedFile = await _picker.pickImage(source: ImageSource.gallery);
+    if (pickedFile != null) {
+      setState(() {
+        _imageFile = File(pickedFile.path);
+      });
+
+      User? user = FirebaseAuth.instance.currentUser;
+      if (user != null) {
+        String profileImageUrl = await _uploadProfileImage(user.uid);
+        await FirebaseFirestore.instance
+            .collection('users')
+            .doc(user.uid)
+            .update({'profileImageUrl': profileImageUrl});
+        setState(() {
+          _profileImageUrl = profileImageUrl;
+        });
+      }
+    }
+  }
+
+  Future<String> _uploadProfileImage(String uid) async {
+    final ref = FirebaseStorage.instance
+        .ref()
+        .child('profile_images')
+        .child('$uid.jpg'); // Gerekirse dosya adı çeşitlendirilebilir
+    await ref.putFile(_imageFile!);
+    return await ref.getDownloadURL();
+  }
+
+  Color _generateRandomColor() {
+    Random random = Random();
+    return Color.fromARGB(
+      255,
+      random.nextInt(256),
+      random.nextInt(256),
+      random.nextInt(256),
+    ).withOpacity(0.4);
+  }
+
+  Future<void> _editProfileField(String field) async {
+    final TextEditingController controller = TextEditingController();
+
+    if (field == 'name') {
+      controller.text = _name;
+    }
 
     showDialog(
       context: context,
       builder: (BuildContext context) {
         return AlertDialog(
-          title: const Text('Profili Düzenle'),
-          content: SingleChildScrollView(
+          title: const Text('Düzenle'),
+          content: TextField(
+            controller: controller,
+            decoration: InputDecoration(
+              labelText: field == 'name' ? 'Ad ve Soyad' : '',
+              border: const OutlineInputBorder(),
+            ),
+          ),
+          actions: <Widget>[
+            TextButton(
+              onPressed: () {
+                Navigator.of(context).pop(); // Dialogu kapat
+              },
+              child: const Text('İptal'),
+            ),
+            ElevatedButton(
+              onPressed: () async {
+                User? user = FirebaseAuth.instance.currentUser;
+
+                if (user != null) {
+                  try {
+                    await FirebaseFirestore.instance
+                        .collection('users')
+                        .doc(user.uid)
+                        .update({
+                      'name': controller.text,
+                    });
+                    await user.updateDisplayName(controller
+                        .text); // Firebase Auth display name güncellemesi
+                    setState(() {
+                      _name = controller.text; // Güncellenen adı göster
+                    });
+                    Navigator.of(context).pop(); // Dialogu kapat
+                  } catch (e) {
+                    print("Güncelleme hatası: $e");
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      SnackBar(content: Text('Güncelleme hatası: $e')),
+                    );
+                  }
+                }
+              },
+              child: const Text('Kaydet'),
+            ),
+          ],
+        );
+      },
+    );
+  }
+
+  Future<void> _updatePassword() async {
+    showDialog(
+      context: context,
+      builder: (BuildContext context) {
+        return AlertDialog(
+          title: const Text('Şifre Güncelle'),
+          content: Form(
+            key: _formKey,
             child: Column(
+              mainAxisSize: MainAxisSize.min,
               children: <Widget>[
-                _buildTextField(nameController, 'Ad'),
-                _buildTextField(emailController, 'Email'),
-                _buildTextField(phoneController, 'Telefon'),
-                _buildTextField(addressController, 'Adres'),
+                TextFormField(
+                  controller: _oldPasswordController,
+                  obscureText: true,
+                  obscuringCharacter: '*',
+                  decoration: const InputDecoration(
+                    labelText: 'Eski Şifre',
+                  ),
+                  validator: (value) {
+                    if (value == null || value.isEmpty) {
+                      return 'Eski şifre boş olamaz';
+                    }
+                    return null;
+                  },
+                ),
+                const SizedBox(height: 10),
+                TextFormField(
+                  controller: _newPasswordController,
+                  obscureText: true,
+                  obscuringCharacter: '*',
+                  decoration: const InputDecoration(
+                    labelText: 'Yeni Şifre',
+                  ),
+                  validator: (value) {
+                    if (value == null || value.isEmpty) {
+                      return 'Yeni şifre boş olamaz';
+                    }
+                    return null;
+                  },
+                ),
+                const SizedBox(height: 10),
+                TextFormField(
+                  controller: _confirmNewPasswordController,
+                  obscureText: true,
+                  obscuringCharacter: '*',
+                  decoration: const InputDecoration(
+                    labelText: 'Yeni Şifre (Tekrar)',
+                  ),
+                  validator: (value) {
+                    if (value == null || value.isEmpty) {
+                      return 'Yeni şifre (tekrar) boş olamaz';
+                    } else if (value != _newPasswordController.text) {
+                      return 'Şifreler uyuşmuyor';
+                    }
+                    return null;
+                  },
+                ),
               ],
             ),
           ),
@@ -64,40 +232,43 @@ class _ProfilePageState extends State<ProfilePage> {
             ),
             ElevatedButton(
               onPressed: () async {
-                final SharedPreferences prefs =
-                    await SharedPreferences.getInstance();
-                await prefs.setString('name', nameController.text);
-                await prefs.setString('email', emailController.text);
-                await prefs.setString('phone', phoneController.text);
-                await prefs.setString('address', addressController.text);
+                if (_formKey.currentState!.validate()) {
+                  User? user = FirebaseAuth.instance.currentUser;
 
-                setState(() {
-                  _name = nameController.text;
-                  _email = emailController.text;
-                  _phone = phoneController.text;
-                  _address = addressController.text;
-                });
+                  if (user != null) {
+                    try {
+                      String email = user.email ?? '';
+                      AuthCredential credential = EmailAuthProvider.credential(
+                        email: email,
+                        password: _oldPasswordController.text,
+                      );
 
-                Navigator.of(context).pop(); // Dialogu kapat
+                      // Kullanıcıyı yeniden kimlik doğrulama
+                      await user.reauthenticateWithCredential(credential);
+
+                      // Yeni şifreyi güncelle
+                      await user.updatePassword(_newPasswordController.text);
+
+                      Navigator.of(context).pop(); // Dialogu kapat
+
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        const SnackBar(
+                            content: Text('Şifre başarıyla güncellendi')),
+                      );
+                    } catch (e) {
+                      print("Şifre güncelleme hatası: $e");
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        SnackBar(content: Text('Şifre güncelleme hatası: $e')),
+                      );
+                    }
+                  }
+                }
               },
-              child: const Text('Kaydet'),
+              child: const Text('Güncelle'),
             ),
           ],
         );
       },
-    );
-  }
-
-  Widget _buildTextField(TextEditingController controller, String label) {
-    return Padding(
-      padding: const EdgeInsets.symmetric(vertical: 8.0),
-      child: TextField(
-        controller: controller,
-        decoration: InputDecoration(
-          labelText: label,
-          border: const OutlineInputBorder(),
-        ),
-      ),
     );
   }
 
@@ -114,72 +285,72 @@ class _ProfilePageState extends State<ProfilePage> {
             ),
           ),
         ),
-        centerTitle: true,
       ),
-      body: SingleChildScrollView(
-        padding: const EdgeInsets.all(16.0),
+      body: Padding(
+        padding: const EdgeInsets.all(20.0),
         child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
           children: <Widget>[
-            const Center(
+            GestureDetector(
+              onTap: _pickImage,
               child: CircleAvatar(
                 radius: 50,
-                backgroundImage:
-                    AssetImage('assets/profile_picture.png'), // Profil resmi
+                backgroundColor: _profileImageUrl == null
+                    ? _generateRandomColor()
+                    : Colors.transparent,
+                backgroundImage: _profileImageUrl != null
+                    ? NetworkImage(_profileImageUrl!)
+                    : null,
+                child: _profileImageUrl == null
+                    ? const Icon(
+                        Icons.person,
+                        size: 50,
+                      )
+                    : null,
               ),
             ),
             const SizedBox(height: 20),
-            Center(
-              child: Text(
+            ListTile(
+              title: const Text(
+                'Ad-Soyad',
+                style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+              ),
+              trailing: IconButton(
+                icon: const Icon(Icons.edit),
+                onPressed: () => _editProfileField('name'),
+              ),
+              subtitle: const Text(
                 _name,
-                style: const TextStyle(
-                  fontSize: 24,
-                  fontWeight: FontWeight.bold,
-                ),
+                style: TextStyle(fontSize: 16),
               ),
             ),
             const SizedBox(height: 20),
-            const Divider(),
-            const SizedBox(height: 10),
-            const Text(
-              'Bilgilerim',
-              style: TextStyle(
-                fontSize: 18,
-                fontWeight: FontWeight.bold,
+            ListTile(
+              title: const Text(
+                'Email',
+                style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+              ),
+              subtitle: Text(
+                _email,
+                style: const TextStyle(fontSize: 16),
               ),
             ),
-            const SizedBox(height: 10),
-            _buildProfileInfoRow('Ad:', _name),
-            _buildProfileInfoRow('Email:', _email),
-            _buildProfileInfoRow('Telefon:', _phone),
-            _buildProfileInfoRow('Adres:', _address),
             const SizedBox(height: 20),
-            Center(
-              child: ElevatedButton(
-                onPressed: _editProfile,
-                child: const Text('Düzenle'),
+            ListTile(
+              title: const Text(
+                'Şifre',
+                style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+              ),
+              trailing: IconButton(
+                icon: const Icon(Icons.edit),
+                onPressed: _updatePassword,
+              ),
+              subtitle: const Text(
+                '********',
+                style: TextStyle(fontSize: 16),
               ),
             ),
           ],
         ),
-      ),
-    );
-  }
-
-  Widget _buildProfileInfoRow(String title, String info) {
-    return Padding(
-      padding: const EdgeInsets.symmetric(vertical: 8.0),
-      child: Row(
-        children: <Widget>[
-          Text(
-            title,
-            style: const TextStyle(
-              fontWeight: FontWeight.bold,
-            ),
-          ),
-          const SizedBox(width: 10),
-          Text(info),
-        ],
       ),
     );
   }
