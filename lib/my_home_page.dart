@@ -13,13 +13,19 @@ class MyHomePage extends StatefulWidget {
 class _MyHomePageState extends State<MyHomePage> {
   late List<String> todolist;
   List<String> filteredLists = [];
+  Map<String, bool> checkedItems = {};
+  Map<String, String> descriptions = {};
 
   @override
   void initState() {
     super.initState();
-    todolist = List.from(widget.category.todolist); // Listeyi kopyala
-    filteredLists = List.from(todolist); // Filtreli listeyi kopyala
-    filteredLists.sort(); // Başlangıçta sıralı
+    todolist = List.from(widget.category.todolist);
+    filteredLists = List.from(todolist);
+    filteredLists.sort();
+    for (var item in todolist) {
+      checkedItems[item] = false;
+      descriptions[item] = '';
+    }
   }
 
   void _filterList(String query) {
@@ -48,7 +54,7 @@ class _MyHomePageState extends State<MyHomePage> {
           actions: <Widget>[
             TextButton(
               onPressed: () {
-                Navigator.of(context).pop(); // Dialogu kapat
+                Navigator.of(context).pop();
               },
               child: const Text('İptal'),
             ),
@@ -58,11 +64,13 @@ class _MyHomePageState extends State<MyHomePage> {
                 if (itemName.isNotEmpty) {
                   setState(() {
                     todolist.add(itemName);
-                    filteredLists = List.from(todolist); // Listeyi güncelle
+                    filteredLists = List.from(todolist);
+                    checkedItems[itemName] = false;
+                    descriptions[itemName] = '';
                   });
                   widget.category.todolist.add(itemName);
                 }
-                Navigator.of(context).pop(); // Dialogu kapat
+                Navigator.of(context).pop();
               },
               child: const Text('Ekle'),
             ),
@@ -91,7 +99,7 @@ class _MyHomePageState extends State<MyHomePage> {
           actions: <Widget>[
             TextButton(
               onPressed: () {
-                Navigator.of(context).pop(); // Dialogu kapat
+                Navigator.of(context).pop();
               },
               child: const Text('İptal'),
             ),
@@ -105,9 +113,13 @@ class _MyHomePageState extends State<MyHomePage> {
                     todolist[todolist.indexOf(oldItem)] = newItem;
                     widget.category.todolist[
                         widget.category.todolist.indexOf(oldItem)] = newItem;
+                    checkedItems.remove(oldItem);
+                    checkedItems[newItem] = false;
+                    descriptions[newItem] = descriptions[oldItem] ?? '';
+                    descriptions.remove(oldItem);
                   });
                 }
-                Navigator.of(context).pop(); // Dialogu kapat
+                Navigator.of(context).pop();
               },
               child: const Text('Kaydet'),
             ),
@@ -123,22 +135,63 @@ class _MyHomePageState extends State<MyHomePage> {
       filteredLists.removeAt(index);
       todolist.remove(itemName);
       widget.category.todolist.remove(itemName);
+      checkedItems.remove(itemName);
+      descriptions.remove(itemName);
     });
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
-        content: Text('$itemName silindi'), // Silinen öğe burada gösteriliyor
+        content: Text('$itemName silindi'),
         action: SnackBarAction(
           label: 'Geri Al',
           onPressed: () {
             setState(() {
               filteredLists.add(itemName);
-              filteredLists.sort(); // Sıralı hale getir
+              filteredLists.sort();
               todolist.add(itemName);
               widget.category.todolist.add(itemName);
+              checkedItems[itemName] = false;
+              descriptions[itemName] = '';
             });
           },
         ),
       ),
+    );
+  }
+
+  void _showAddDescriptionDialog(String item) {
+    final TextEditingController controller =
+        TextEditingController(text: descriptions[item]);
+
+    showDialog(
+      context: context,
+      builder: (BuildContext context) {
+        return AlertDialog(
+          title: const Text('Açıklama Ekle'),
+          content: TextField(
+            controller: controller,
+            decoration: const InputDecoration(
+              labelText: 'Açıklama',
+            ),
+          ),
+          actions: <Widget>[
+            TextButton(
+              onPressed: () {
+                Navigator.of(context).pop();
+              },
+              child: const Text('İptal'),
+            ),
+            ElevatedButton(
+              onPressed: () {
+                setState(() {
+                  descriptions[item] = controller.text;
+                });
+                Navigator.of(context).pop();
+              },
+              child: const Text('Kaydet'),
+            ),
+          ],
+        );
+      },
     );
   }
 
@@ -162,15 +215,13 @@ class _MyHomePageState extends State<MyHomePage> {
           Padding(
             padding: const EdgeInsets.all(8.0),
             child: SizedBox(
-              height:
-                  40.0, // TextField'ın yüksekliğini buradan ayarlayabilirsiniz
+              height: 40.0,
               child: TextField(
                 onChanged: _filterList,
                 decoration: const InputDecoration(
                   hintText: 'Ara',
                   prefixIcon: Icon(Icons.search),
-                  contentPadding: EdgeInsets.symmetric(
-                      vertical: 10.0), // İçerik padding'i ayarlama
+                  contentPadding: EdgeInsets.symmetric(vertical: 10.0),
                 ),
               ),
             ),
@@ -179,26 +230,82 @@ class _MyHomePageState extends State<MyHomePage> {
             child: ListView.builder(
               itemCount: filteredLists.length,
               itemBuilder: (context, index) {
+                final item = filteredLists[index];
                 return Card(
-                  child: ListTile(
-                    title: Text(filteredLists[index]),
+                  child: ExpansionTile(
+                    leading: Checkbox(
+                      value: checkedItems[item],
+                      onChanged: (bool? value) {
+                        setState(() {
+                          checkedItems[item] = value ?? false;
+                        });
+                      },
+                    ),
+                    title: Text(
+                      item,
+                      style: TextStyle(
+                        decoration: checkedItems[item]!
+                            ? TextDecoration.lineThrough
+                            : TextDecoration.none,
+                      ),
+                    ),
                     trailing: Row(
                       mainAxisSize: MainAxisSize.min,
                       children: <Widget>[
                         IconButton(
                           icon: const Icon(Icons.edit),
                           onPressed: () {
-                            _showEditItemDialog(index); // Ögeyi düzenle
+                            _showEditItemDialog(index);
                           },
                         ),
                         IconButton(
                           icon: const Icon(Icons.delete),
                           onPressed: () {
-                            _removeTodoItem(index); // Ögeyi sil
+                            _removeTodoItem(index);
                           },
                         ),
                       ],
                     ),
+                    children: <Widget>[
+                      Padding(
+                        padding: const EdgeInsets.all(8.0),
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: <Widget>[
+                            if (descriptions[item]!.isNotEmpty)
+                              Text(
+                                descriptions[item]!,
+                                style: const TextStyle(
+                                    color: Colors.grey, fontSize: 14.0),
+                              ),
+                            ElevatedButton(
+                              onPressed: () {
+                                _showAddDescriptionDialog(item);
+                              },
+                              child: const Text('Açıklama Ekle'),
+                            ),
+                            ElevatedButton(
+                              onPressed: () {
+                                // Resim ekleme işlevi
+                              },
+                              child: const Text('Resim Ekle'),
+                            ),
+                            ElevatedButton(
+                              onPressed: () {
+                                // Ses ekleme işlevi
+                              },
+                              child: const Text('Ses Ekle'),
+                            ),
+                            ElevatedButton(
+                              onPressed: () {
+                                // Cihaz verileri ekleme işlevi
+                              },
+                              child: const Text('Cihaz Verisi Ekle'),
+                            ),
+                          ],
+                        ),
+                      ),
+                    ],
                   ),
                 );
               },

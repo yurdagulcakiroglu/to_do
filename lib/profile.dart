@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_storage/firebase_storage.dart';
+import 'package:flutter/widgets.dart';
 import 'package:image_picker/image_picker.dart';
 import 'dart:io';
 import 'dart:math';
@@ -19,7 +20,6 @@ class _ProfilePageState extends State<ProfilePage> {
   String? _profileImageUrl; // Nullable yapıldı
   File? _imageFile;
   final ImagePicker _picker = ImagePicker();
-  final TextEditingController _nameController = TextEditingController();
   final TextEditingController _oldPasswordController = TextEditingController();
   final TextEditingController _newPasswordController = TextEditingController();
   final TextEditingController _confirmNewPasswordController =
@@ -272,81 +272,150 @@ class _ProfilePageState extends State<ProfilePage> {
     );
   }
 
+  Future<void> _deleteAccount(BuildContext context) async {
+    try {
+      User? user = FirebaseAuth.instance.currentUser;
+
+      // Firestore'dan kullanıcı verilerini silme
+      if (user != null) {
+        await FirebaseFirestore.instance
+            .collection('users')
+            .doc(user.uid)
+            .delete();
+      }
+
+      // Profil resmi URL'sini kontrol et
+      if (_profileImageUrl != null && _profileImageUrl!.isNotEmpty) {
+        try {
+          Reference storageRef =
+              FirebaseStorage.instance.refFromURL(_profileImageUrl!);
+          await storageRef.delete();
+        } catch (e) {
+          print("Profil resmi silme hatası: $e");
+        }
+      }
+
+      // Kullanıcıyı Firebase Authentication'dan sil
+      if (user != null) {
+        await user.delete();
+      }
+
+      // Başarılı silme işlemi sonrası, kullanıcıyı giriş sayfasına yönlendir
+      Navigator.of(context).pushReplacementNamed('/signin_screen');
+    } catch (e) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Hesap silme hatası: $e')),
+      );
+    }
+  }
+
+  void _showDeleteConfirmationDialog(BuildContext context) {
+    showDialog(
+      context: context,
+      builder: (BuildContext context) {
+        return AlertDialog(
+          title: const Text('Hesabı Sil'),
+          content: const Text('Bu hesabı silmek istediğinizden emin misiniz?'),
+          actions: <Widget>[
+            TextButton(
+              child: const Text('İptal'),
+              onPressed: () {
+                Navigator.of(context).pop();
+              },
+            ),
+            TextButton(
+              child: const Text('Sil'),
+              onPressed: () {
+                Navigator.of(context).pop(); // Confirm dialog kapanır
+                _deleteAccount(context); // BuildContext'i burada geçiriyoruz
+              },
+            ),
+          ],
+        );
+      },
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Profil'),
+        title: const Text('Kategoriler'),
         flexibleSpace: Container(
-          decoration: const BoxDecoration(
+          decoration: BoxDecoration(
             image: DecorationImage(
-              image: AssetImage('assets/images/bg2.png'),
+              image: const AssetImage('assets/images/bg2.png'),
               fit: BoxFit.cover,
+              colorFilter: ColorFilter.mode(
+                Colors.black.withOpacity(0.5), // Opaklık değeri
+                BlendMode.dstATop, // Resmin üstüne renk ekleme
+              ),
             ),
           ),
         ),
+        centerTitle: true,
       ),
       body: Padding(
-        padding: const EdgeInsets.all(20.0),
+        padding: const EdgeInsets.all(16.0),
         child: Column(
+          mainAxisAlignment:
+              MainAxisAlignment.spaceBetween, // İçeriği üstten alta yerleştirir
           children: <Widget>[
-            GestureDetector(
-              onTap: _pickImage,
-              child: CircleAvatar(
-                radius: 50,
-                backgroundColor: _profileImageUrl == null
-                    ? _generateRandomColor()
-                    : Colors.transparent,
-                backgroundImage: _profileImageUrl != null
-                    ? NetworkImage(_profileImageUrl!)
-                    : null,
-                child: _profileImageUrl == null
-                    ? const Icon(
-                        Icons.person,
-                        size: 50,
-                      )
-                    : null,
-              ),
+            Column(
+              children: [
+                GestureDetector(
+                  onTap: _pickImage,
+                  child: CircleAvatar(
+                    radius: 50,
+                    backgroundColor: _generateRandomColor(),
+                    backgroundImage: _profileImageUrl != null
+                        ? NetworkImage(_profileImageUrl!)
+                        : null,
+                    child: _profileImageUrl == null
+                        ? const Icon(Icons.person, size: 50)
+                        : null,
+                  ),
+                ),
+                const SizedBox(
+                    height: 20), // Fotoğraf ve çizgi arasındaki boşluk
+                Container(
+                  margin: const EdgeInsets.symmetric(vertical: 20),
+                  height: 1,
+                  color: Colors.grey[
+                      300], // Çizgi rengini istediğiniz gibi ayarlayabilirsiniz
+                ),
+                const SizedBox(
+                    height: 20), // Çizgi ve yazılar arasındaki boşluk
+                ListTile(
+                  title: const Text('Ad ve Soyad'),
+                  subtitle: Text(_name),
+                  trailing: IconButton(
+                    icon: const Icon(Icons.edit),
+                    onPressed: () => _editProfileField('name'),
+                  ),
+                ),
+                ListTile(
+                  title: const Text('E-posta'),
+                  subtitle: Text(_email),
+                ),
+                ListTile(
+                  title: const Text('Şifre'),
+                  subtitle: const Text('*********'),
+                  trailing: IconButton(
+                    icon: const Icon(Icons.edit),
+                    onPressed: _updatePassword,
+                  ),
+                ),
+              ],
             ),
-            const SizedBox(height: 20),
-            ListTile(
-              title: const Text(
-                'Ad-Soyad',
-                style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+            ElevatedButton(
+              onPressed: () => _showDeleteConfirmationDialog(context),
+              style: ElevatedButton.styleFrom(
+                backgroundColor: Colors.red,
               ),
-              trailing: IconButton(
-                icon: const Icon(Icons.edit),
-                onPressed: () => _editProfileField('name'),
-              ),
-              subtitle: const Text(
-                _name,
-                style: TextStyle(fontSize: 16),
-              ),
-            ),
-            const SizedBox(height: 20),
-            ListTile(
-              title: const Text(
-                'Email',
-                style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
-              ),
-              subtitle: Text(
-                _email,
-                style: const TextStyle(fontSize: 16),
-              ),
-            ),
-            const SizedBox(height: 20),
-            ListTile(
-              title: const Text(
-                'Şifre',
-                style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
-              ),
-              trailing: IconButton(
-                icon: const Icon(Icons.edit),
-                onPressed: _updatePassword,
-              ),
-              subtitle: const Text(
-                '********',
-                style: TextStyle(fontSize: 16),
+              child: const Text(
+                'Hesabı Sil',
+                style: TextStyle(color: Colors.white),
               ),
             ),
           ],

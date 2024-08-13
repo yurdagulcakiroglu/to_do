@@ -143,10 +143,16 @@ class _CategoryPageState extends State<CategoryPage> {
       appBar: AppBar(
         title: const Text('Kategoriler'),
         flexibleSpace: Container(
-          decoration: const BoxDecoration(
+          decoration: BoxDecoration(
             image: DecorationImage(
-              image: AssetImage('assets/images/bg2.png'),
+              image: const AssetImage('assets/images/bg2.png'),
               fit: BoxFit.cover,
+              colorFilter: ColorFilter.mode(
+                Colors.black.withOpacity(
+                    0.5), // Burada opaklık değerini ayarlayabilirsiniz
+                BlendMode
+                    .dstATop, // Bu blend modu ile resmin üstüne renk eklenir
+              ),
             ),
           ),
         ),
@@ -157,14 +163,20 @@ class _CategoryPageState extends State<CategoryPage> {
         child: ListView(
           padding: EdgeInsets.zero,
           children: <Widget>[
-            const DrawerHeader(
+            DrawerHeader(
               decoration: BoxDecoration(
                 image: DecorationImage(
-                  image: AssetImage('assets/images/bg1.png'),
+                  image: const AssetImage('assets/images/bg1.png'),
                   fit: BoxFit.cover,
+                  colorFilter: ColorFilter.mode(
+                    Colors.black.withOpacity(
+                        0.5), // Burada opaklık değerini ayarlayabilirsiniz
+                    BlendMode
+                        .dstATop, // Bu blend modu ile resmin üstüne renk eklenir
+                  ),
                 ),
               ),
-              child: Text(
+              child: const Text(
                 'Menü',
                 style: TextStyle(
                   fontSize: 24,

@@ -1,9 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart' show rootBundle;
-import 'package:to_do/category_page.dart';
+import 'package:to_do/screens/signin_screen.dart';
 import 'package:to_do/theme/theme.dart';
 import 'package:to_do/widgets/custom_scaffold.dart';
-import 'package:to_do/screens/signin_screen.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import '../services/auth.dart';
@@ -17,6 +16,7 @@ class SignUpScreen extends StatefulWidget {
 
 class _SignUpScreenState extends State<SignUpScreen> {
   final _formSignupKey = GlobalKey<FormState>();
+  final TextEditingController _nameController = TextEditingController();
   final TextEditingController _emailController = TextEditingController();
   final TextEditingController _passwordController = TextEditingController();
   bool agreePersonalData = false;
@@ -110,6 +110,7 @@ class _SignUpScreenState extends State<SignUpScreen> {
                       ),
                       // full name
                       TextFormField(
+                        controller: _nameController,
                         validator: (value) {
                           if (value == null || value.isEmpty) {
                             return 'Lütfen İsim-Soyisminizi Girin';
@@ -346,9 +347,6 @@ class _SignUpScreenState extends State<SignUpScreen> {
                           ),
                         ],
                       ),
-                      const SizedBox(
-                        height: 20.0,
-                      ),
                     ],
                   ),
                 ),
@@ -361,22 +359,14 @@ class _SignUpScreenState extends State<SignUpScreen> {
   }
 
   Future<void> _showKvkkDialog(BuildContext context) async {
-    // Dosya içeriğini oku
-    final kvkkContent =
-        await rootBundle.loadString('assets/kvkk_text/kvkk.txt');
-
-    // Dialog'u göster
-    showDialog(
+    final kvkkText = await rootBundle.loadString('assets/kvkk.txt');
+    return showDialog<void>(
       context: context,
       builder: (BuildContext context) {
         return AlertDialog(
-          title: const Text('Kişisel Verilerin İşlenmesi'),
+          title: const Text('Kişisel Verilerin Korunması Kanunu (KVKK)'),
           content: SingleChildScrollView(
-            child: ListBody(
-              children: <Widget>[
-                Text(kvkkContent),
-              ],
-            ),
+            child: Text(kvkkText),
           ),
           actions: <Widget>[
             TextButton(

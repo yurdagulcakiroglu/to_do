@@ -98,7 +98,7 @@ class _SignInScreenState extends State<SignInScreen> {
         userDoc.set({
           'name': user.displayName ?? 'Anonim',
           'email': user.email,
-          'profilePicture': user.photoURL,
+          'profileImageUrl': user.photoURL,
         });
       }
     });
