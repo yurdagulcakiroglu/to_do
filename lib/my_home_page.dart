@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'category_page.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
 
 class MyHomePage extends StatefulWidget {
   const MyHomePage({super.key, required this.category});
@@ -11,21 +12,37 @@ class MyHomePage extends StatefulWidget {
 }
 
 class _MyHomePageState extends State<MyHomePage> {
-  late List<String> todolist;
+  late List<String> todolist = []; // Boş bir liste ile başlat
   List<String> filteredLists = [];
   Map<String, bool> checkedItems = {};
   Map<String, String> descriptions = {};
 
+  final FirebaseFirestore _firestore = FirebaseFirestore.instance;
+
   @override
   void initState() {
     super.initState();
-    todolist = List.from(widget.category.todolist);
-    filteredLists = List.from(todolist);
-    filteredLists.sort();
-    for (var item in todolist) {
-      checkedItems[item] = false;
-      descriptions[item] = '';
-    }
+    _loadNotes(); // Firestore'dan notları yükle
+  }
+
+  void _loadNotes() async {
+    final notesSnapshot = await _firestore
+        .collection('categories')
+        .doc(widget.category.id)
+        .collection('notes')
+        .get();
+
+    final notes = notesSnapshot.docs.map((doc) => doc.data()).toList();
+    setState(() {
+      todolist = notes.map((note) => note['title'] as String).toList();
+      filteredLists = List.from(todolist);
+      filteredLists.sort();
+      for (var note in notes) {
+        String item = note['title'] as String;
+        checkedItems[item] = false;
+        descriptions[item] = note['description'] as String? ?? '';
+      }
+    });
   }
 
   void _filterList(String query) {
@@ -59,18 +76,44 @@ class _MyHomePageState extends State<MyHomePage> {
               child: const Text('İptal'),
             ),
             ElevatedButton(
-              onPressed: () {
+              onPressed: () async {
                 final String itemName = controller.text;
                 if (itemName.isNotEmpty) {
-                  setState(() {
-                    todolist.add(itemName);
-                    filteredLists = List.from(todolist);
-                    checkedItems[itemName] = false;
-                    descriptions[itemName] = '';
-                  });
-                  widget.category.todolist.add(itemName);
+                  try {
+                    final newNote = {
+                      'title': itemName,
+                      'createdAt': Timestamp.now(),
+                      'description': '',
+                    };
+
+                    await _firestore
+                        .collection('categories')
+                        .doc(widget.category.id)
+                        .collection('notes')
+                        .doc(itemName)
+                        .set(newNote);
+
+                    setState(() {
+                      if (todolist.isEmpty) {
+                        todolist = [];
+                      }
+                      todolist.add(itemName);
+                      filteredLists = List.from(todolist);
+                      filteredLists.sort();
+                      checkedItems[itemName] = false;
+                      descriptions[itemName] = '';
+                    });
+                    Navigator.of(context).pop(); // Dialogu kapat
+                  } catch (e) {
+                    // Hata yakalama ve gösterme
+                    print("Error adding note: $e");
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      const SnackBar(
+                        content: Text('Not eklenirken bir hata oluştu.'),
+                      ),
+                    );
+                  }
                 }
-                Navigator.of(context).pop();
               },
               child: const Text('Ekle'),
             ),
@@ -104,15 +147,23 @@ class _MyHomePageState extends State<MyHomePage> {
               child: const Text('İptal'),
             ),
             ElevatedButton(
-              onPressed: () {
+              onPressed: () async {
                 final String newItem = controller.text;
                 if (newItem.isNotEmpty) {
+                  final oldItem = filteredLists[index];
+                  await _firestore
+                      .collection('categories')
+                      .doc(widget.category.id)
+                      .collection('notes')
+                      .doc(oldItem)
+                      .update({
+                    'title': newItem,
+                    'updatedAt': Timestamp.now(),
+                  });
+
                   setState(() {
-                    final oldItem = filteredLists[index];
                     filteredLists[index] = newItem;
                     todolist[todolist.indexOf(oldItem)] = newItem;
-                    widget.category.todolist[
-                        widget.category.todolist.indexOf(oldItem)] = newItem;
                     checkedItems.remove(oldItem);
                     checkedItems[newItem] = false;
                     descriptions[newItem] = descriptions[oldItem] ?? '';
@@ -129,29 +180,29 @@ class _MyHomePageState extends State<MyHomePage> {
     );
   }
 
-  void _removeTodoItem(int index) {
+  void _removeTodoItem(int index) async {
     final itemName = filteredLists[index];
+    await _firestore
+        .collection('categories')
+        .doc(widget.category.id)
+        .collection('notes')
+        .doc(itemName)
+        .delete();
+
     setState(() {
       filteredLists.removeAt(index);
       todolist.remove(itemName);
-      widget.category.todolist.remove(itemName);
       checkedItems.remove(itemName);
       descriptions.remove(itemName);
     });
+
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
         content: Text('$itemName silindi'),
         action: SnackBarAction(
           label: 'Geri Al',
-          onPressed: () {
-            setState(() {
-              filteredLists.add(itemName);
-              filteredLists.sort();
-              todolist.add(itemName);
-              widget.category.todolist.add(itemName);
-              checkedItems[itemName] = false;
-              descriptions[itemName] = '';
-            });
+          onPressed: () async {
+            // Geri al işlemi için opsiyonel bir yapı ekleyebilirsiniz.
           },
         ),
       ),
@@ -181,9 +232,20 @@ class _MyHomePageState extends State<MyHomePage> {
               child: const Text('İptal'),
             ),
             ElevatedButton(
-              onPressed: () {
+              onPressed: () async {
+                final description = controller.text;
+                await _firestore
+                    .collection('categories')
+                    .doc(widget.category.id)
+                    .collection('notes')
+                    .doc(item)
+                    .update({
+                  'description': description,
+                  'updatedAt': Timestamp.now(),
+                });
+
                 setState(() {
-                  descriptions[item] = controller.text;
+                  descriptions[item] = description;
                 });
                 Navigator.of(context).pop();
               },
@@ -195,17 +257,24 @@ class _MyHomePageState extends State<MyHomePage> {
     );
   }
 
+  void _showAddAttachmentDialog(String item, String type) {
+    // Ekler (resim, ses, vb.) eklemek için bu işlev kullanılacak.
+    // Dosya yüklemelerini ve Firestore'a URL eklemeyi işlemek için mantığı uygulayın.
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: const Color(0xFFF5F5F5),
       appBar: AppBar(
-        title: Text(widget.category.name),
+        title: Text(widget.category.title),
         flexibleSpace: Container(
-          decoration: const BoxDecoration(
+          decoration: BoxDecoration(
             image: DecorationImage(
-              image: AssetImage('assets/images/bg2.png'),
+              image: const AssetImage('assets/images/bg2.png'),
               fit: BoxFit.cover,
+              colorFilter: ColorFilter.mode(
+                  Colors.black.withOpacity(0.5), BlendMode.dstATop),
             ),
           ),
         ),
@@ -276,31 +345,40 @@ class _MyHomePageState extends State<MyHomePage> {
                               Text(
                                 descriptions[item]!,
                                 style: const TextStyle(
-                                    color: Colors.grey, fontSize: 14.0),
+                                  color: Colors.grey,
+                                  fontSize: 14.0,
+                                ),
                               ),
-                            ElevatedButton(
+                            if (descriptions[item]!.isEmpty)
+                              const Text(
+                                'Açıklama eklemek için dokunun',
+                                style: TextStyle(
+                                  color: Colors.grey,
+                                  fontSize: 14.0,
+                                ),
+                              ),
+                            IconButton(
+                              icon: const Icon(Icons.description),
                               onPressed: () {
                                 _showAddDescriptionDialog(item);
                               },
-                              child: const Text('Açıklama Ekle'),
                             ),
-                            ElevatedButton(
-                              onPressed: () {
-                                // Resim ekleme işlevi
-                              },
-                              child: const Text('Resim Ekle'),
-                            ),
-                            ElevatedButton(
-                              onPressed: () {
-                                // Ses ekleme işlevi
-                              },
-                              child: const Text('Ses Ekle'),
-                            ),
-                            ElevatedButton(
-                              onPressed: () {
-                                // Cihaz verileri ekleme işlevi
-                              },
-                              child: const Text('Cihaz Verisi Ekle'),
+                            // Ekler için bir sıra düğme ekleyebilirsiniz
+                            Row(
+                              children: [
+                                IconButton(
+                                  icon: const Icon(Icons.attach_file),
+                                  onPressed: () {
+                                    _showAddAttachmentDialog(item, 'image');
+                                  },
+                                ),
+                                IconButton(
+                                  icon: const Icon(Icons.mic),
+                                  onPressed: () {
+                                    _showAddAttachmentDialog(item, 'audio');
+                                  },
+                                ),
+                              ],
                             ),
                           ],
                         ),
@@ -314,9 +392,7 @@ class _MyHomePageState extends State<MyHomePage> {
         ],
       ),
       floatingActionButton: FloatingActionButton(
-        backgroundColor: const Color(0xFFF5F5F5),
         onPressed: _showAddItemDialog,
-        tooltip: 'Ekle',
         child: const Icon(Icons.add),
       ),
     );

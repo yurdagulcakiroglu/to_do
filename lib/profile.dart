@@ -2,7 +2,6 @@ import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_storage/firebase_storage.dart';
-import 'package:flutter/widgets.dart';
 import 'package:image_picker/image_picker.dart';
 import 'dart:io';
 import 'dart:math';
@@ -17,7 +16,7 @@ class ProfilePage extends StatefulWidget {
 class _ProfilePageState extends State<ProfilePage> {
   String _name = '';
   String _email = '';
-  String? _profileImageUrl; // Nullable yapıldı
+  String? _profileImageUrl;
   File? _imageFile;
   final ImagePicker _picker = ImagePicker();
   final TextEditingController _oldPasswordController = TextEditingController();
@@ -55,7 +54,8 @@ class _ProfilePageState extends State<ProfilePage> {
         print("Veri çekme hatası: $e");
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(
-              content: Text('Profil bilgileri alınırken bir hata oluştu.')),
+            content: Text('Profil bilgileri alınırken bir hata oluştu.'),
+          ),
         );
       }
     } else {
@@ -88,7 +88,7 @@ class _ProfilePageState extends State<ProfilePage> {
     final ref = FirebaseStorage.instance
         .ref()
         .child('profile_images')
-        .child('$uid.jpg'); // Gerekirse dosya adı çeşitlendirilebilir
+        .child('$uid.jpg');
     await ref.putFile(_imageFile!);
     return await ref.getDownloadURL();
   }
@@ -125,7 +125,7 @@ class _ProfilePageState extends State<ProfilePage> {
           actions: <Widget>[
             TextButton(
               onPressed: () {
-                Navigator.of(context).pop(); // Dialogu kapat
+                Navigator.of(context).pop();
               },
               child: const Text('İptal'),
             ),
@@ -141,12 +141,11 @@ class _ProfilePageState extends State<ProfilePage> {
                         .update({
                       'name': controller.text,
                     });
-                    await user.updateDisplayName(controller
-                        .text); // Firebase Auth display name güncellemesi
+                    await user.updateDisplayName(controller.text);
                     setState(() {
-                      _name = controller.text; // Güncellenen adı göster
+                      _name = controller.text;
                     });
-                    Navigator.of(context).pop(); // Dialogu kapat
+                    Navigator.of(context).pop();
                   } catch (e) {
                     print("Güncelleme hatası: $e");
                     ScaffoldMessenger.of(context).showSnackBar(
@@ -177,7 +176,6 @@ class _ProfilePageState extends State<ProfilePage> {
                 TextFormField(
                   controller: _oldPasswordController,
                   obscureText: true,
-                  obscuringCharacter: '*',
                   decoration: const InputDecoration(
                     labelText: 'Eski Şifre',
                   ),
@@ -192,7 +190,6 @@ class _ProfilePageState extends State<ProfilePage> {
                 TextFormField(
                   controller: _newPasswordController,
                   obscureText: true,
-                  obscuringCharacter: '*',
                   decoration: const InputDecoration(
                     labelText: 'Yeni Şifre',
                   ),
@@ -207,7 +204,6 @@ class _ProfilePageState extends State<ProfilePage> {
                 TextFormField(
                   controller: _confirmNewPasswordController,
                   obscureText: true,
-                  obscuringCharacter: '*',
                   decoration: const InputDecoration(
                     labelText: 'Yeni Şifre (Tekrar)',
                   ),
@@ -226,7 +222,7 @@ class _ProfilePageState extends State<ProfilePage> {
           actions: <Widget>[
             TextButton(
               onPressed: () {
-                Navigator.of(context).pop(); // Dialogu kapat
+                Navigator.of(context).pop();
               },
               child: const Text('İptal'),
             ),
@@ -249,7 +245,7 @@ class _ProfilePageState extends State<ProfilePage> {
                       // Yeni şifreyi güncelle
                       await user.updatePassword(_newPasswordController.text);
 
-                      Navigator.of(context).pop(); // Dialogu kapat
+                      Navigator.of(context).pop();
 
                       ScaffoldMessenger.of(context).showSnackBar(
                         const SnackBar(
@@ -276,32 +272,25 @@ class _ProfilePageState extends State<ProfilePage> {
     try {
       User? user = FirebaseAuth.instance.currentUser;
 
-      // Firestore'dan kullanıcı verilerini silme
       if (user != null) {
         await FirebaseFirestore.instance
             .collection('users')
             .doc(user.uid)
             .delete();
-      }
 
-      // Profil resmi URL'sini kontrol et
-      if (_profileImageUrl != null && _profileImageUrl!.isNotEmpty) {
-        try {
-          Reference storageRef =
-              FirebaseStorage.instance.refFromURL(_profileImageUrl!);
-          await storageRef.delete();
-        } catch (e) {
-          print("Profil resmi silme hatası: $e");
+        if (_profileImageUrl != null && _profileImageUrl!.isNotEmpty) {
+          try {
+            Reference storageRef =
+                FirebaseStorage.instance.refFromURL(_profileImageUrl!);
+            await storageRef.delete();
+          } catch (e) {
+            print("Profil resmi silme hatası: $e");
+          }
         }
-      }
 
-      // Kullanıcıyı Firebase Authentication'dan sil
-      if (user != null) {
         await user.delete();
+        Navigator.of(context).pushReplacementNamed('/signin_screen');
       }
-
-      // Başarılı silme işlemi sonrası, kullanıcıyı giriş sayfasına yönlendir
-      Navigator.of(context).pushReplacementNamed('/signin_screen');
     } catch (e) {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(content: Text('Hesap silme hatası: $e')),
@@ -323,12 +312,15 @@ class _ProfilePageState extends State<ProfilePage> {
                 Navigator.of(context).pop();
               },
             ),
-            TextButton(
+            ElevatedButton(
               child: const Text('Sil'),
               onPressed: () {
-                Navigator.of(context).pop(); // Confirm dialog kapanır
-                _deleteAccount(context); // BuildContext'i burada geçiriyoruz
+                Navigator.of(context).pop();
+                _deleteAccount(context);
               },
+              style: ElevatedButton.styleFrom(
+                backgroundColor: Colors.red,
+              ),
             ),
           ],
         );
@@ -340,82 +332,74 @@ class _ProfilePageState extends State<ProfilePage> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Kategoriler'),
+        title: const Text('Profil'),
         flexibleSpace: Container(
           decoration: BoxDecoration(
             image: DecorationImage(
-              image: const AssetImage('assets/images/bg2.png'),
+              image: AssetImage('assets/images/bg2.png'),
               fit: BoxFit.cover,
               colorFilter: ColorFilter.mode(
-                Colors.black.withOpacity(0.5), // Opaklık değeri
-                BlendMode.dstATop, // Resmin üstüne renk ekleme
-              ),
+                  Colors.black.withOpacity(0.3), BlendMode.dstATop),
             ),
           ),
         ),
-        centerTitle: true,
       ),
       body: Padding(
         padding: const EdgeInsets.all(16.0),
         child: Column(
-          mainAxisAlignment:
-              MainAxisAlignment.spaceBetween, // İçeriği üstten alta yerleştirir
           children: <Widget>[
-            Column(
-              children: [
-                GestureDetector(
-                  onTap: _pickImage,
-                  child: CircleAvatar(
-                    radius: 50,
-                    backgroundColor: _generateRandomColor(),
-                    backgroundImage: _profileImageUrl != null
-                        ? NetworkImage(_profileImageUrl!)
-                        : null,
-                    child: _profileImageUrl == null
-                        ? const Icon(Icons.person, size: 50)
-                        : null,
-                  ),
-                ),
-                const SizedBox(
-                    height: 20), // Fotoğraf ve çizgi arasındaki boşluk
-                Container(
-                  margin: const EdgeInsets.symmetric(vertical: 20),
-                  height: 1,
-                  color: Colors.grey[
-                      300], // Çizgi rengini istediğiniz gibi ayarlayabilirsiniz
-                ),
-                const SizedBox(
-                    height: 20), // Çizgi ve yazılar arasındaki boşluk
-                ListTile(
-                  title: const Text('Ad ve Soyad'),
-                  subtitle: Text(_name),
-                  trailing: IconButton(
-                    icon: const Icon(Icons.edit),
-                    onPressed: () => _editProfileField('name'),
-                  ),
-                ),
-                ListTile(
-                  title: const Text('E-posta'),
-                  subtitle: Text(_email),
-                ),
-                ListTile(
-                  title: const Text('Şifre'),
-                  subtitle: const Text('*********'),
-                  trailing: IconButton(
-                    icon: const Icon(Icons.edit),
-                    onPressed: _updatePassword,
-                  ),
-                ),
-              ],
+            GestureDetector(
+              onTap: _pickImage,
+              child: CircleAvatar(
+                radius: 50,
+                backgroundImage: _profileImageUrl != null
+                    ? NetworkImage(_profileImageUrl!)
+                    : null,
+                backgroundColor: _profileImageUrl == null
+                    ? _generateRandomColor()
+                    : Colors.transparent,
+                child: _profileImageUrl == null
+                    ? const Icon(Icons.add_a_photo, color: Colors.white)
+                    : null,
+              ),
             ),
+            const SizedBox(height: 20),
+            Container(
+              decoration: BoxDecoration(
+                border: Border(bottom: BorderSide(color: Colors.grey.shade300)),
+              ),
+              child: ListTile(
+                title: const Text('E-posta'),
+                subtitle: Text(_email),
+                trailing: const Icon(Icons.edit),
+                onTap: () {
+                  // E-posta değiştirilemez, sadece gösterilir.
+                },
+              ),
+            ),
+            Container(
+              decoration: BoxDecoration(
+                border: Border(bottom: BorderSide(color: Colors.grey.shade300)),
+              ),
+              child: ListTile(
+                title: const Text('Ad ve Soyad'),
+                subtitle: Text(_name),
+                trailing: const Icon(Icons.edit),
+                onTap: () => _editProfileField('name'),
+              ),
+            ),
+            ListTile(
+              title: const Text('Şifre'),
+              subtitle: const Text('******'),
+              trailing: const Icon(Icons.edit),
+              onTap: _updatePassword,
+            ),
+            const Spacer(),
             ElevatedButton(
               onPressed: () => _showDeleteConfirmationDialog(context),
+              child: const Text('Hesabı Sil'),
               style: ElevatedButton.styleFrom(
                 backgroundColor: Colors.red,
-              ),
-              child: const Text(
-                'Hesabı Sil',
-                style: TextStyle(color: Colors.white),
               ),
             ),
           ],

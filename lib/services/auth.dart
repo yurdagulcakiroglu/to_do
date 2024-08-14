@@ -111,4 +111,10 @@ class AuthService {
       throw Exception('Google ile giriş işlemi sırasında bir hata oluştu.');
     }
   }
+
+  // Kullanıcının şu anki Firebase kimliğini döndürür
+  Future<User?> getCurrentUser() async {
+    return _auth.currentUser;
+  }
+  
 }

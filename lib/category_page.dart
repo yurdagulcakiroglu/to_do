@@ -1,10 +1,12 @@
+import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:to_do/theme/theme.dart';
 import 'my_home_page.dart';
 import 'profile.dart';
 import 'settings.dart';
-import '../services/auth.dart'; // AuthService import edilmesi
+import '../services/auth.dart';
+import 'package:firebase_auth/firebase_auth.dart'; // Firebase Auth için
 
 class CategoryPage extends StatefulWidget {
   const CategoryPage({super.key});
@@ -16,6 +18,37 @@ class CategoryPage extends StatefulWidget {
 class _CategoryPageState extends State<CategoryPage> {
   final List<Category> categories = [];
   final AuthService _auth = AuthService(); // AuthService örneği oluşturulması
+
+  @override
+  void initState() {
+    super.initState();
+    _fetchCategoriesFromFirestore();
+  }
+
+  Future<void> _fetchCategoriesFromFirestore() async {
+    User? user = await _auth.getCurrentUser(); // Kullanıcıyı al
+    if (user != null) {
+      String userId = user.uid; // Kullanıcının uid'sini al
+      QuerySnapshot snapshot = await FirebaseFirestore.instance
+          .collection('categories')
+          .where('userId', isEqualTo: userId)
+          .get();
+
+      setState(() {
+        categories.clear();
+        snapshot.docs.forEach((doc) {
+          categories.add(Category(
+            id: doc.id,
+            title: doc['title'],
+            todolist: [], // Notlar ayrı bir yerde tutuluyor, burada boş bırakıyoruz
+          ));
+        });
+      });
+    } else {
+      // Eğer kullanıcı oturum açmamışsa ne yapılacağına karar verin
+      print('Kullanıcı oturum açmamış');
+    }
+  }
 
   void _showAddCategoryDialog() {
     final TextEditingController controller = TextEditingController();
@@ -40,15 +73,27 @@ class _CategoryPageState extends State<CategoryPage> {
               child: const Text('İptal'),
             ),
             ElevatedButton(
-              onPressed: () {
+              onPressed: () async {
                 final String categoryName = controller.text;
                 if (categoryName.isNotEmpty) {
-                  setState(() {
-                    final String categoryId =
-                        DateTime.now().toString(); // Benzersiz id oluşturma
-                    categories.add(Category(
-                        id: categoryId, name: categoryName, todolist: []));
-                  });
+                  User? user = await _auth.getCurrentUser();
+                  if (user != null) {
+                    // Firestore'a yeni kategori ekle
+                    DocumentReference docRef = await FirebaseFirestore.instance
+                        .collection('categories')
+                        .add({
+                      'title': categoryName,
+                      'userId': user.uid,
+                    });
+
+                    setState(() {
+                      categories.add(Category(
+                        id: docRef.id,
+                        title: categoryName,
+                        todolist: [],
+                      ));
+                    });
+                  }
                 }
                 Navigator.of(context).pop(); // Dialogu kapat
               },
@@ -62,7 +107,7 @@ class _CategoryPageState extends State<CategoryPage> {
 
   void _showEditCategoryDialog(Category category) {
     final TextEditingController controller =
-        TextEditingController(text: category.name);
+        TextEditingController(text: category.title);
 
     showDialog(
       context: context,
@@ -84,11 +129,19 @@ class _CategoryPageState extends State<CategoryPage> {
               child: const Text('İptal'),
             ),
             ElevatedButton(
-              onPressed: () {
+              onPressed: () async {
                 final String categoryName = controller.text;
                 if (categoryName.isNotEmpty) {
+                  // Firestore'da kategoriyi güncelle
+                  await FirebaseFirestore.instance
+                      .collection('categories')
+                      .doc(category.id)
+                      .update({
+                    'title': categoryName,
+                  });
+
                   setState(() {
-                    category.name = categoryName; // Kategori adını güncelle
+                    category.title = categoryName;
                   });
                 }
                 Navigator.of(context).pop(); // Dialogu kapat
@@ -101,23 +154,47 @@ class _CategoryPageState extends State<CategoryPage> {
     );
   }
 
-  void _removeTodoCategory(Category category) {
+  void _removeTodoCategory(Category category) async {
+    await FirebaseFirestore.instance
+        .collection('categories')
+        .doc(category.id)
+        .delete();
+
     setState(() {
       categories.remove(category); // Seçilen kategoriyi listeden kaldır
     });
+
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
-        content: Text('${category.name} kategorisi silindi'),
+        content: Text('${category.title} kategorisi silindi'),
         action: SnackBarAction(
           label: 'Geri Al',
           onPressed: () {
-            setState(() {
-              categories.add(category); // Silinen kategoriyi geri al
-            });
+            // Geri alma işlemi için Firestore'a tekrar ekleme yapılmalı
+            _undoDeleteCategory(category);
           },
         ),
       ),
     );
+  }
+
+  Future<void> _undoDeleteCategory(Category category) async {
+    User? user = await _auth.getCurrentUser();
+    if (user != null) {
+      DocumentReference docRef =
+          await FirebaseFirestore.instance.collection('categories').add({
+        'title': category.title,
+        'userId': user.uid,
+      });
+
+      setState(() {
+        categories.add(Category(
+          id: docRef.id,
+          title: category.title,
+          todolist: [],
+        ));
+      });
+    }
   }
 
   Future<void> _navigateToCategory(Category category) async {
@@ -169,10 +246,8 @@ class _CategoryPageState extends State<CategoryPage> {
                   image: const AssetImage('assets/images/bg1.png'),
                   fit: BoxFit.cover,
                   colorFilter: ColorFilter.mode(
-                    Colors.black.withOpacity(
-                        0.5), // Burada opaklık değerini ayarlayabilirsiniz
-                    BlendMode
-                        .dstATop, // Bu blend modu ile resmin üstüne renk eklenir
+                    Colors.black.withOpacity(0.5),
+                    BlendMode.dstATop,
                   ),
                 ),
               ),
@@ -228,7 +303,7 @@ class _CategoryPageState extends State<CategoryPage> {
             elevation: 5,
             child: ListTile(
               contentPadding: const EdgeInsets.all(16.0),
-              title: Text(category.name, style: const TextStyle(fontSize: 18)),
+              title: Text(category.title, style: const TextStyle(fontSize: 18)),
               subtitle: Text(
                 previewText,
                 overflow: TextOverflow.ellipsis,
@@ -260,6 +335,7 @@ class _CategoryPageState extends State<CategoryPage> {
       floatingActionButton: FloatingActionButton(
         onPressed: _showAddCategoryDialog,
         tooltip: 'Yeni Kategori Ekle',
+        backgroundColor: Color.fromARGB(255, 225, 234, 255),
         child: const Icon(Icons.add),
       ),
     );
@@ -268,8 +344,8 @@ class _CategoryPageState extends State<CategoryPage> {
 
 class Category {
   String id;
-  String name;
+  String title;
   List<String> todolist;
 
-  Category({required this.id, required this.name, required this.todolist});
+  Category({required this.id, required this.title, required this.todolist});
 }
