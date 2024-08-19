@@ -1,6 +1,11 @@
 import 'package:flutter/material.dart';
 import 'category_page.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:firebase_auth/firebase_auth.dart';
+import '../services/auth.dart';
+import 'package:firebase_storage/firebase_storage.dart';
+import 'package:image_picker/image_picker.dart';
+import 'dart:io';
 
 class MyHomePage extends StatefulWidget {
   const MyHomePage({super.key, required this.category});
@@ -16,33 +21,44 @@ class _MyHomePageState extends State<MyHomePage> {
   List<String> filteredLists = [];
   Map<String, bool> checkedItems = {};
   Map<String, String> descriptions = {};
+  Map<String, String> itemImageUrls = {};
 
   final FirebaseFirestore _firestore = FirebaseFirestore.instance;
+  final FirebaseAuth _auth = FirebaseAuth.instance;
+  User? _currentUser;
 
   @override
   void initState() {
     super.initState();
+    _currentUser = _auth.currentUser; // Mevcut kullanıcıyı al
     _loadNotes(); // Firestore'dan notları yükle
   }
 
   void _loadNotes() async {
-    final notesSnapshot = await _firestore
-        .collection('categories')
-        .doc(widget.category.id)
-        .collection('notes')
-        .get();
+    User? user = _auth.currentUser; // Kullanıcıyı al
+    if (user != null) {
+      final notesSnapshot = await _firestore
+          .collection('users')
+          .doc(user.uid)
+          .collection('categories')
+          .doc(widget.category.id)
+          .collection('notes')
+          .get();
 
-    final notes = notesSnapshot.docs.map((doc) => doc.data()).toList();
-    setState(() {
-      todolist = notes.map((note) => note['title'] as String).toList();
-      filteredLists = List.from(todolist);
-      filteredLists.sort();
-      for (var note in notes) {
-        String item = note['title'] as String;
-        checkedItems[item] = false;
-        descriptions[item] = note['description'] as String? ?? '';
-      }
-    });
+      final notes = notesSnapshot.docs.map((doc) => doc.data()).toList();
+      setState(() {
+        todolist = notes.map((note) => note['title'] as String).toList();
+        filteredLists = List.from(todolist);
+        filteredLists.sort();
+        for (var note in notes) {
+          String item = note['title'] as String;
+
+          checkedItems[item] = false;
+          descriptions[item] = note['description'] as String? ?? '';
+          itemImageUrls[item] = note['image'] as String? ?? '';
+        }
+      });
+    }
   }
 
   void _filterList(String query) {
@@ -65,7 +81,7 @@ class _MyHomePageState extends State<MyHomePage> {
           content: TextField(
             controller: controller,
             decoration: const InputDecoration(
-              labelText: 'yazınız..',
+              labelText: 'Yazınız..',
             ),
           ),
           actions: <Widget>[
@@ -80,32 +96,38 @@ class _MyHomePageState extends State<MyHomePage> {
                 final String itemName = controller.text;
                 if (itemName.isNotEmpty) {
                   try {
-                    final newNote = {
-                      'title': itemName,
-                      'createdAt': Timestamp.now(),
-                      'description': '',
-                    };
+                    if (_currentUser != null) {
+                      final newNote = {
+                        'title': itemName,
+                        'createdAt': Timestamp.now(),
+                        'description': '',
+                      };
 
-                    await _firestore
-                        .collection('categories')
-                        .doc(widget.category.id)
-                        .collection('notes')
-                        .doc(itemName)
-                        .set(newNote);
+                      await _firestore
+                          .collection('users')
+                          .doc(_currentUser!.uid)
+                          .collection('categories')
+                          .doc(widget.category.id)
+                          .collection('notes')
+                          .doc(itemName)
+                          .set(newNote);
 
-                    setState(() {
-                      if (todolist.isEmpty) {
-                        todolist = [];
-                      }
-                      todolist.add(itemName);
-                      filteredLists = List.from(todolist);
-                      filteredLists.sort();
-                      checkedItems[itemName] = false;
-                      descriptions[itemName] = '';
-                    });
-                    Navigator.of(context).pop(); // Dialogu kapat
+                      setState(() {
+                        todolist.add(itemName);
+                        filteredLists = List.from(todolist);
+                        filteredLists.sort();
+                        checkedItems[itemName] = false;
+                        descriptions[itemName] = '';
+                      });
+                      Navigator.of(context).pop(); // Dialogu kapat
+                    } else {
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        const SnackBar(
+                          content: Text('Kullanıcı oturum açmamış.'),
+                        ),
+                      );
+                    }
                   } catch (e) {
-                    // Hata yakalama ve gösterme
                     print("Error adding note: $e");
                     ScaffoldMessenger.of(context).showSnackBar(
                       const SnackBar(
@@ -152,6 +174,8 @@ class _MyHomePageState extends State<MyHomePage> {
                 if (newItem.isNotEmpty) {
                   final oldItem = filteredLists[index];
                   await _firestore
+                      .collection('users')
+                      .doc(_currentUser!.uid)
                       .collection('categories')
                       .doc(widget.category.id)
                       .collection('notes')
@@ -173,7 +197,7 @@ class _MyHomePageState extends State<MyHomePage> {
                 Navigator.of(context).pop();
               },
               child: const Text('Kaydet'),
-            ),
+            )
           ],
         );
       },
@@ -183,6 +207,8 @@ class _MyHomePageState extends State<MyHomePage> {
   void _removeTodoItem(int index) async {
     final itemName = filteredLists[index];
     await _firestore
+        .collection('users')
+        .doc(_currentUser!.uid)
         .collection('categories')
         .doc(widget.category.id)
         .collection('notes')
@@ -223,6 +249,7 @@ class _MyHomePageState extends State<MyHomePage> {
             decoration: const InputDecoration(
               labelText: 'Açıklama',
             ),
+            maxLines: 3,
           ),
           actions: <Widget>[
             TextButton(
@@ -234,20 +261,33 @@ class _MyHomePageState extends State<MyHomePage> {
             ElevatedButton(
               onPressed: () async {
                 final description = controller.text;
-                await _firestore
-                    .collection('categories')
-                    .doc(widget.category.id)
-                    .collection('notes')
-                    .doc(item)
-                    .update({
-                  'description': description,
-                  'updatedAt': Timestamp.now(),
-                });
+                if (description.isNotEmpty) {
+                  try {
+                    await _firestore
+                        .collection('users')
+                        .doc(_currentUser!.uid)
+                        .collection('categories')
+                        .doc(widget.category.id)
+                        .collection('notes')
+                        .doc(item)
+                        .update({
+                      'description': description,
+                      'updatedAt': Timestamp.now(),
+                    });
 
-                setState(() {
-                  descriptions[item] = description;
-                });
-                Navigator.of(context).pop();
+                    setState(() {
+                      descriptions[item] = description;
+                    });
+                    Navigator.of(context).pop();
+                  } catch (e) {
+                    print("Error updating description: $e");
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      const SnackBar(
+                        content: Text('Açıklama eklenirken bir hata oluştu.'),
+                      ),
+                    );
+                  }
+                }
               },
               child: const Text('Kaydet'),
             ),
@@ -257,9 +297,49 @@ class _MyHomePageState extends State<MyHomePage> {
     );
   }
 
-  void _showAddAttachmentDialog(String item, String type) {
-    // Ekler (resim, ses, vb.) eklemek için bu işlev kullanılacak.
-    // Dosya yüklemelerini ve Firestore'a URL eklemeyi işlemek için mantığı uygulayın.
+  void _showAddAttachmentDialog(String item, String type) async {
+    final ImagePicker _picker = ImagePicker();
+    XFile? image;
+
+    if (type == 'image') {
+      image = await _picker.pickImage(source: ImageSource.gallery);
+      if (image != null) {
+        try {
+          final ref = FirebaseStorage.instance
+              .ref()
+              .child('notes')
+              .child(item)
+              .child(DateTime.now().toString() + '.png');
+          await ref.putFile(File(image.path));
+          final imageUrl = await ref.getDownloadURL();
+
+          await _firestore
+              .collection('users')
+              .doc(_currentUser!.uid)
+              .collection('categories')
+              .doc(widget.category.id)
+              .collection('notes')
+              .doc(item)
+              .update({
+            'image': imageUrl,
+            'updatedAt': Timestamp.now(),
+          });
+
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(
+              content: Text('Görsel başarıyla eklendi.'),
+            ),
+          );
+        } catch (e) {
+          print("Error adding image: $e");
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(
+              content: Text('Görsel eklenirken bir hata oluştu.'),
+            ),
+          );
+        }
+      }
+    }
   }
 
   @override
@@ -342,40 +422,44 @@ class _MyHomePageState extends State<MyHomePage> {
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: <Widget>[
                             if (descriptions[item]!.isNotEmpty)
-                              Text(
-                                descriptions[item]!,
-                                style: const TextStyle(
-                                  color: Colors.grey,
-                                  fontSize: 14.0,
-                                ),
+                              Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  Text(
+                                    descriptions[item]!,
+                                    style: const TextStyle(
+                                      color: Color(0xFF7A7A7A),
+                                      fontSize: 14.0,
+                                    ),
+                                  ),
+                                  if (itemImageUrls[item] != null &&
+                                      itemImageUrls[item]!
+                                          .isNotEmpty) // Görsel URL'si varsa göster
+                                    Padding(
+                                      padding: const EdgeInsets.only(top: 8.0),
+                                      child: Image.network(
+                                        itemImageUrls[item]!,
+                                        height: 100,
+                                        width: 100,
+                                        fit: BoxFit.cover,
+                                      ),
+                                    ),
+                                ],
                               ),
-                            if (descriptions[item]!.isEmpty)
-                              const Text(
-                                'Açıklama eklemek için dokunun',
-                                style: TextStyle(
-                                  color: Colors.grey,
-                                  fontSize: 14.0,
-                                ),
-                              ),
-                            IconButton(
-                              icon: const Icon(Icons.description),
-                              onPressed: () {
-                                _showAddDescriptionDialog(item);
-                              },
-                            ),
+
                             // Ekler için bir sıra düğme ekleyebilirsiniz
                             Row(
                               children: [
                                 IconButton(
-                                  icon: const Icon(Icons.attach_file),
+                                  icon: const Icon(Icons.photo),
                                   onPressed: () {
                                     _showAddAttachmentDialog(item, 'image');
                                   },
                                 ),
                                 IconButton(
-                                  icon: const Icon(Icons.mic),
+                                  icon: const Icon(Icons.description),
                                   onPressed: () {
-                                    _showAddAttachmentDialog(item, 'audio');
+                                    _showAddDescriptionDialog(item);
                                   },
                                 ),
                               ],

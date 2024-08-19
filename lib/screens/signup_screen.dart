@@ -6,6 +6,9 @@ import 'package:to_do/widgets/custom_scaffold.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import '../services/auth.dart';
+import 'package:google_sign_in/google_sign_in.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:to_do/category_page.dart';
 
 class SignUpScreen extends StatefulWidget {
   const SignUpScreen({super.key});
@@ -22,6 +25,8 @@ class _SignUpScreenState extends State<SignUpScreen> {
   bool agreePersonalData = false;
 
   final AuthService _auth = AuthService();
+  final GoogleSignIn _googleSignIn = GoogleSignIn();
+  String kvkkText = '';
 
   Future<void> _signUp() async {
     if (_formSignupKey.currentState!.validate() && agreePersonalData) {
@@ -64,6 +69,81 @@ class _SignUpScreenState extends State<SignUpScreen> {
         const SnackBar(
           content: Text('Lütfen kişisel verilerinizin işlenmesine onay verin!'),
         ),
+      );
+    }
+  }
+
+  Future<void> _saveUserData(User user) async {
+    DocumentReference userDoc =
+        FirebaseFirestore.instance.collection('users').doc(user.uid);
+
+    userDoc.get().then((docSnapshot) {
+      if (!docSnapshot.exists) {
+        userDoc.set({
+          'name': user.displayName ?? 'Anonim',
+          'email': user.email,
+          'profileImageUrl': user.photoURL,
+        });
+      }
+    });
+  }
+
+  Future<void> _signUpWithGoogle() async {
+    try {
+      // Google ile giriş yapma işlemini başlat
+      final GoogleSignInAccount? googleUser = await _googleSignIn.signIn();
+      if (googleUser == null) {
+        // Kullanıcı Google girişini iptal etti
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Google ile giriş iptal edildi!')),
+        );
+        return;
+      }
+
+      // Kullanıcı bilgilerini al
+      final GoogleSignInAuthentication googleAuth =
+          await googleUser.authentication;
+      final AuthCredential credential = GoogleAuthProvider.credential(
+        accessToken: googleAuth.accessToken,
+        idToken: googleAuth.idToken,
+      );
+
+      // Firebase'e giriş yap
+      final UserCredential userCredential =
+          await FirebaseAuth.instance.signInWithCredential(credential);
+      final User? user = userCredential.user;
+
+      if (user != null) {
+        if (!user.emailVerified) {
+          // E-posta doğrulama isteği gönder
+          await user.sendEmailVerification();
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(
+                content: Text('E-posta doğrulamanızı yapmalısınız!')),
+          );
+        }
+
+        // Kullanıcı verilerini Firestore'a kaydet
+        await _saveUserData(user);
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Google ile kayıt başarılı!')),
+        );
+
+        // Kayıt sonrası yönlendirme
+        Navigator.pushReplacement(
+          context,
+          MaterialPageRoute(builder: (context) => const CategoryPage()),
+        );
+      } else {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Google ile giriş başarısız!')),
+        );
+      }
+    } catch (e) {
+      print('Google giriş hatası: $e');
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+            content: Text('Google ile giriş sırasında bir hata oluştu!')),
       );
     }
   }
@@ -265,10 +345,10 @@ class _SignUpScreenState extends State<SignUpScreen> {
                           const Padding(
                             padding: EdgeInsets.symmetric(
                               vertical: 0,
-                              horizontal: 10,
+                              horizontal: 10.0,
                             ),
                             child: Text(
-                              '..',
+                              'Veya',
                               style: TextStyle(
                                 color: Colors.black45,
                               ),
@@ -285,45 +365,38 @@ class _SignUpScreenState extends State<SignUpScreen> {
                       const SizedBox(
                         height: 30.0,
                       ),
-                      // sign up social media logo
                       Row(
                         mainAxisAlignment: MainAxisAlignment.spaceEvenly,
                         children: [
                           IconButton(
-                            icon: const FaIcon(FontAwesomeIcons.facebook),
-                            onPressed: () {
-                              // Facebook login action
-                            },
+                            icon: const FaIcon(
+                              FontAwesomeIcons.google,
+                              size: 25.0, // İkon boyutunu ayarlayın
+                              color: Colors.black54,
+                            ),
+                            onPressed: _signUpWithGoogle, // Google ile giriş
                           ),
                           IconButton(
-                            icon: const FaIcon(FontAwesomeIcons.twitter),
+                            icon: const FaIcon(
+                              FontAwesomeIcons.apple,
+                              size: 30.0, // İkon boyutunu ayarlayın
+                              color: Colors.black54,
+                            ),
                             onPressed: () {
-                              // Twitter login action
-                            },
-                          ),
-                          IconButton(
-                            icon: const FaIcon(FontAwesomeIcons.google),
-                            onPressed: () {
-                              // Google login action
-                            },
-                          ),
-                          IconButton(
-                            icon: const FaIcon(FontAwesomeIcons.apple),
-                            onPressed: () {
-                              // Apple login action
+                              // Apple ile giriş
                             },
                           ),
                         ],
                       ),
                       const SizedBox(
-                        height: 25.0,
+                        height: 30.0,
                       ),
                       // already have an account
                       Row(
                         mainAxisAlignment: MainAxisAlignment.center,
                         children: [
                           const Text(
-                            'Zaten bir hesabın var mı? ',
+                            'Zaten bir hesabınız var mı? ',
                             style: TextStyle(
                               color: Colors.black45,
                             ),
@@ -333,15 +406,15 @@ class _SignUpScreenState extends State<SignUpScreen> {
                               Navigator.push(
                                 context,
                                 MaterialPageRoute(
-                                  builder: (e) => const SignInScreen(),
+                                  builder: (context) => const SignInScreen(),
                                 ),
                               );
                             },
                             child: Text(
-                              'Giriş Yap',
+                              'Giriş Yapın',
                               style: TextStyle(
-                                fontWeight: FontWeight.bold,
                                 color: lightColorScheme.primary,
+                                fontWeight: FontWeight.bold,
                               ),
                             ),
                           ),
@@ -359,14 +432,21 @@ class _SignUpScreenState extends State<SignUpScreen> {
   }
 
   Future<void> _showKvkkDialog(BuildContext context) async {
-    final kvkkText = await rootBundle.loadString('assets/kvkk.txt');
-    return showDialog<void>(
+    // Dosya içeriğini oku
+    final kvkkContent =
+        await rootBundle.loadString('assets/kvkk_text/kvkk.txt');
+    // Dialog'u göster
+    showDialog(
       context: context,
       builder: (BuildContext context) {
         return AlertDialog(
-          title: const Text('Kişisel Verilerin Korunması Kanunu (KVKK)'),
+          title: const Text('Kişisel Verilerin İşlenmesi'),
           content: SingleChildScrollView(
-            child: Text(kvkkText),
+            child: ListBody(
+              children: <Widget>[
+                Text(kvkkContent),
+              ],
+            ),
           ),
           actions: <Widget>[
             TextButton(

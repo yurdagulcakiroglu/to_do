@@ -23,6 +23,7 @@ class Deneme extends StatelessWidget {
       // Rota tanımlamaları burada yapılır
       routes: {
         '/signin': (context) => const SignInScreen(),
+        '/welcome_screen': (context) => const WelcomeScreen()
         // Diğer rotalarınızı burada tanımlayın
       },
       // Varsayılan olarak gösterilecek ekran

@@ -9,6 +9,7 @@ import '../theme/theme.dart';
 import '../services/auth.dart';
 import 'package:to_do/category_page.dart';
 import 'package:google_sign_in/google_sign_in.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
 class SignInScreen extends StatefulWidget {
   const SignInScreen({super.key});
@@ -21,35 +22,71 @@ class _SignInScreenState extends State<SignInScreen> {
   final _formSignInKey = GlobalKey<FormState>();
   final TextEditingController _emailController = TextEditingController();
   final TextEditingController _passwordController = TextEditingController();
-  bool rememberPassword = true;
+  bool rememberPassword = false;
 
   final AuthService _auth = AuthService();
 
+  @override
+  void initState() {
+    super.initState();
+    _loadUserCredentials();
+  }
+
+  Future<void> _loadUserCredentials() async {
+    final prefs = await SharedPreferences.getInstance();
+    setState(() {
+      rememberPassword = prefs.getBool('rememberPassword') ?? false;
+      if (rememberPassword) {
+        _emailController.text = prefs.getString('userEmail') ?? '';
+        _passwordController.text = prefs.getString('userPassword') ?? '';
+      }
+    });
+  }
+
   Future<void> _signIn() async {
     if (_formSignInKey.currentState!.validate()) {
-      User? user = await _auth.signInWithEmailAndPassword(
-        _emailController.text,
-        _passwordController.text,
-      );
-      if (user != null) {
-        if (!user.emailVerified) {
-          await user.sendEmailVerification();
-          ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(
-                content: Text('E-posta doğrulamanızı yapmalısınız!')),
-          );
+      try {
+        User? user = await _auth.signInWithEmailAndPassword(
+          _emailController.text,
+          _passwordController.text,
+        );
+
+        if (user != null) {
+          if (!user.emailVerified) {
+            await user.sendEmailVerification();
+            ScaffoldMessenger.of(context).showSnackBar(
+              const SnackBar(
+                  content: Text('E-posta doğrulamanızı yapmalısınız!')),
+            );
+          } else {
+            await _saveUserData(user);
+
+            final prefs = await SharedPreferences.getInstance();
+            if (rememberPassword) {
+              await prefs.setBool('rememberPassword', true);
+              await prefs.setString('userEmail', _emailController.text);
+              await prefs.setString('userPassword', _passwordController.text);
+            } else {
+              await prefs.remove('rememberPassword');
+              await prefs.remove('userEmail');
+              await prefs.remove('userPassword');
+            }
+
+            Navigator.pushReplacement(
+              context,
+              MaterialPageRoute(builder: (context) => const CategoryPage()),
+            );
+            ScaffoldMessenger.of(context).showSnackBar(
+              const SnackBar(content: Text('Giriş başarılı!')),
+            );
+          }
         } else {
-          await _saveUserData(user);
-          Navigator.push(
-            context,
-            MaterialPageRoute(builder: (context) => const CategoryPage()),
-          );
-          ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(content: Text('Giriş başarılı!')),
-          );
+          _showUserNotFoundDialog();
         }
-      } else {
-        _showUserNotFoundDialog();
+      } catch (e) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Giriş başarısız: ${e.toString()}')),
+        );
       }
     }
   }
@@ -267,10 +304,9 @@ class _SignInScreenState extends State<SignInScreen> {
                             ),
                           ),
                           const Padding(
-                            padding: EdgeInsets.symmetric(
-                                vertical: 0, horizontal: 10),
+                            padding: EdgeInsets.symmetric(horizontal: 10),
                             child: Text(
-                              '...',
+                              'Veya',
                               style: TextStyle(color: Colors.black45),
                             ),
                           ),
@@ -287,25 +323,21 @@ class _SignInScreenState extends State<SignInScreen> {
                         mainAxisAlignment: MainAxisAlignment.spaceEvenly,
                         children: [
                           IconButton(
-                            icon: const FaIcon(FontAwesomeIcons.facebook),
-                            onPressed: () {
-                              // Facebook login action
-                            },
+                            icon: const FaIcon(
+                              FontAwesomeIcons.google,
+                              size: 25.0, // İkon boyutunu ayarlayın
+                              color: Colors.black54,
+                            ),
+                            onPressed: _signInWithGoogle, // Google ile giriş
                           ),
                           IconButton(
-                            icon: const FaIcon(FontAwesomeIcons.twitter),
+                            icon: const FaIcon(
+                              FontAwesomeIcons.apple,
+                              size: 30.0, // İkon boyutunu ayarlayın
+                              color: Colors.black54,
+                            ),
                             onPressed: () {
-                              // Twitter login action
-                            },
-                          ),
-                          IconButton(
-                            icon: const FaIcon(FontAwesomeIcons.google),
-                            onPressed: _signInWithGoogle, //google ile giriş
-                          ),
-                          IconButton(
-                            icon: const FaIcon(FontAwesomeIcons.apple),
-                            onPressed: () {
-                              // Apple login action
+                              // Apple ile giriş
                             },
                           ),
                         ],

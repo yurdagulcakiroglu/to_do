@@ -269,15 +269,41 @@ class _ProfilePageState extends State<ProfilePage> {
   }
 
   Future<void> _deleteAccount(BuildContext context) async {
-    try {
-      User? user = FirebaseAuth.instance.currentUser;
+    User? user = FirebaseAuth.instance.currentUser;
 
-      if (user != null) {
-        await FirebaseFirestore.instance
-            .collection('users')
-            .doc(user.uid)
-            .delete();
+    if (user != null) {
+      try {
+        // Firestore'dan kullanıcı verilerini sil
+        await FirebaseFirestore.instance.runTransaction((transaction) async {
+          // Kullanıcı belgesini sil
+          DocumentSnapshot userDoc = await transaction.get(
+            FirebaseFirestore.instance.collection('users').doc(user.uid),
+          );
+          if (userDoc.exists) {
+            transaction.delete(userDoc.reference);
+          }
 
+          // Kullanıcıya ait categories koleksiyonunu ve içindeki notları sil
+          QuerySnapshot categoriesSnapshot = await FirebaseFirestore.instance
+              .collection('users')
+              .doc(user.uid)
+              .collection('categories')
+              .get();
+
+          for (var categoryDoc in categoriesSnapshot.docs) {
+            // Categories belgesini sil
+            transaction.delete(categoryDoc.reference);
+
+            // Category'nin alt koleksiyonu notes'u sil
+            QuerySnapshot notesSnapshot =
+                await categoryDoc.reference.collection('notes').get();
+            for (var noteDoc in notesSnapshot.docs) {
+              transaction.delete(noteDoc.reference);
+            }
+          }
+        });
+
+        // Firebase Storage'dan profil resmini sil
         if (_profileImageUrl != null && _profileImageUrl!.isNotEmpty) {
           try {
             Reference storageRef =
@@ -288,13 +314,15 @@ class _ProfilePageState extends State<ProfilePage> {
           }
         }
 
+        // Authentication'dan kullanıcıyı sil
         await user.delete();
-        Navigator.of(context).pushReplacementNamed('/signin_screen');
+      } catch (e) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Hesap silme hatası: $e')),
+        );
       }
-    } catch (e) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Hesap silme hatası: $e')),
-      );
+    } else {
+      print("Kullanıcı oturumu açık değil.");
     }
   }
 
@@ -314,9 +342,12 @@ class _ProfilePageState extends State<ProfilePage> {
             ),
             ElevatedButton(
               child: const Text('Sil'),
-              onPressed: () {
-                Navigator.of(context).pop();
-                _deleteAccount(context);
+              onPressed: () async {
+                // Hesabı silme işlemini başlat
+                await _deleteAccount(context);
+
+                // Kullanıcı silindikten sonra WelcomeScreen sayfasına yönlendirin
+                Navigator.of(context).pushReplacementNamed('/welcome_screen');
               },
               style: ElevatedButton.styleFrom(
                 backgroundColor: Colors.red,
@@ -336,7 +367,7 @@ class _ProfilePageState extends State<ProfilePage> {
         flexibleSpace: Container(
           decoration: BoxDecoration(
             image: DecorationImage(
-              image: AssetImage('assets/images/bg2.png'),
+              image: const AssetImage('assets/images/bg2.png'),
               fit: BoxFit.cover,
               colorFilter: ColorFilter.mode(
                   Colors.black.withOpacity(0.3), BlendMode.dstATop),

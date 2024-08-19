@@ -65,7 +65,7 @@ class WelcomeScreen extends StatelessWidget {
                   Expanded(
                     child: WelcomeButton(
                       buttonText: 'Giriş',
-                      onTap: () => Navigator.push(
+                      onTap: () => Navigator.pushReplacement(
                         context,
                         MaterialPageRoute(
                           builder: (context) => const signin.SignInScreen(),
@@ -85,7 +85,7 @@ class WelcomeScreen extends StatelessWidget {
                         ),
                       ),
                       color: Colors.white,
-                      textColor: Color.fromARGB(255, 111, 148, 243),
+                      textColor: const Color.fromARGB(255, 111, 148, 243),
                     ),
                   ),
                 ],
