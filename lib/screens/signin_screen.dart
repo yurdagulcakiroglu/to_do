@@ -300,17 +300,26 @@ class _SignInScreenState extends State<SignInScreen> {
                         mainAxisAlignment: MainAxisAlignment.spaceEvenly,
                         children: [
                           IconButton(
-                            icon: const FaIcon(FontAwesomeIcons.google),
-                            onPressed: _signInWithGoogle, //google ile giriş
+                            icon: const FaIcon(
+                              FontAwesomeIcons.google,
+                              size: 25.0, // İkon boyutunu ayarlayın
+                              color: Colors.black54,
+                            ),
+                            onPressed: _signInWithGoogle, // Google ile giriş
                           ),
                           IconButton(
-                            icon: const FaIcon(FontAwesomeIcons.apple),
+                            icon: const FaIcon(
+                              FontAwesomeIcons.apple,
+                              size: 30.0, // İkon boyutunu ayarlayın
+                              color: Colors.black54,
+                            ),
                             onPressed: () {
-                              // Apple ile giriş ama apple cihazım olmadığı için henüz sağlamadım.
+                              // Apple ile giriş
                             },
                           ),
                         ],
                       ),
+
                       const SizedBox(
                         height: 25.0,
                       ),

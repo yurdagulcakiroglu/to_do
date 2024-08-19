@@ -53,9 +53,10 @@ class _MyHomePageState extends State<MyHomePage> {
         for (var note in notes) {
           String item = note['title'] as String;
 
-          checkedItems[item] = false;
+          checkedItems[item] = note['checked'] as bool? ?? false;
           descriptions[item] = note['description'] as String? ?? '';
-          itemImageUrls[item] = note['image'] as String? ?? '';
+          itemImageUrls[item] =
+              note['image'] as String? ?? ''; // Fotoğraf URL'sini al
         }
       });
     }
@@ -206,6 +207,12 @@ class _MyHomePageState extends State<MyHomePage> {
 
   void _removeTodoItem(int index) async {
     final itemName = filteredLists[index];
+    final isChecked = checkedItems.containsKey(itemName)
+        ? checkedItems[itemName] ?? false
+        : false; // Null kontrolü ve varsayılan değer
+    final description = descriptions[itemName] ?? '';
+    final imageUrl = itemImageUrls[itemName] ?? '';
+
     await _firestore
         .collection('users')
         .doc(_currentUser!.uid)
@@ -218,8 +225,10 @@ class _MyHomePageState extends State<MyHomePage> {
     setState(() {
       filteredLists.removeAt(index);
       todolist.remove(itemName);
+
       checkedItems.remove(itemName);
       descriptions.remove(itemName);
+      itemImageUrls.remove(itemName);
     });
 
     ScaffoldMessenger.of(context).showSnackBar(
@@ -228,7 +237,33 @@ class _MyHomePageState extends State<MyHomePage> {
         action: SnackBarAction(
           label: 'Geri Al',
           onPressed: () async {
-            // Geri al işlemi için opsiyonel bir yapı ekleyebilirsiniz.
+            // Geri alma işlemi
+            await _firestore
+                .collection('users')
+                .doc(_currentUser!.uid)
+                .collection('categories')
+                .doc(widget.category.id)
+                .collection('notes')
+                .doc(itemName)
+                .set({
+              'checked': isChecked,
+              'description': description,
+              'image': imageUrl, // Fotoğraf URL'sini de geri yükleyin
+            });
+
+            setState(() {
+              filteredLists.insert(
+                  index, itemName); // Öğeyi eski konumuna ekleyin
+              todolist.add(itemName);
+
+              if (isChecked) {
+                checkedItems[itemName] = true;
+              }
+
+              descriptions[itemName] = description;
+              itemImageUrls[itemName] =
+                  imageUrl; // Fotoğraf URL'sini geri yükleyin
+            });
           },
         ),
       ),
@@ -325,6 +360,10 @@ class _MyHomePageState extends State<MyHomePage> {
             'updatedAt': Timestamp.now(),
           });
 
+          setState(() {
+            itemImageUrls[item] = imageUrl; // URL'yi güncelle
+          });
+
           ScaffoldMessenger.of(context).showSnackBar(
             const SnackBar(
               content: Text('Görsel başarıyla eklendi.'),
@@ -383,7 +422,8 @@ class _MyHomePageState extends State<MyHomePage> {
                 return Card(
                   child: ExpansionTile(
                     leading: Checkbox(
-                      value: checkedItems[item],
+                      value: checkedItems[item] ??
+                          false, // `checkedItems` bir Map olduğu için `null` kontrolü
                       onChanged: (bool? value) {
                         setState(() {
                           checkedItems[item] = value ?? false;
@@ -393,7 +433,7 @@ class _MyHomePageState extends State<MyHomePage> {
                     title: Text(
                       item,
                       style: TextStyle(
-                        decoration: checkedItems[item]!
+                        decoration: checkedItems[item] == true
                             ? TextDecoration.lineThrough
                             : TextDecoration.none,
                       ),
@@ -404,13 +444,13 @@ class _MyHomePageState extends State<MyHomePage> {
                         IconButton(
                           icon: const Icon(Icons.edit),
                           onPressed: () {
-                            _showEditItemDialog(index);
+                            _showEditItemDialog(filteredLists.indexOf(item));
                           },
                         ),
                         IconButton(
                           icon: const Icon(Icons.delete),
                           onPressed: () {
-                            _removeTodoItem(index);
+                            _removeTodoItem(filteredLists.indexOf(item));
                           },
                         ),
                       ],
@@ -421,20 +461,18 @@ class _MyHomePageState extends State<MyHomePage> {
                         child: Column(
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: <Widget>[
-                            if (descriptions[item]!.isNotEmpty)
+                            if ((descriptions[item] ?? '').isNotEmpty)
                               Column(
                                 crossAxisAlignment: CrossAxisAlignment.start,
                                 children: [
                                   Text(
-                                    descriptions[item]!,
+                                    descriptions[item] ?? '',
                                     style: const TextStyle(
                                       color: Color(0xFF7A7A7A),
                                       fontSize: 14.0,
                                     ),
                                   ),
-                                  if (itemImageUrls[item] != null &&
-                                      itemImageUrls[item]!
-                                          .isNotEmpty) // Görsel URL'si varsa göster
+                                  if ((itemImageUrls[item] ?? '').isNotEmpty)
                                     Padding(
                                       padding: const EdgeInsets.only(top: 8.0),
                                       child: Image.network(
@@ -446,8 +484,6 @@ class _MyHomePageState extends State<MyHomePage> {
                                     ),
                                 ],
                               ),
-
-                            // Ekler için bir sıra düğme ekleyebilirsiniz
                             Row(
                               children: [
                                 IconButton(
