@@ -22,26 +22,9 @@ class _SignInScreenState extends State<SignInScreen> {
   final _formSignInKey = GlobalKey<FormState>();
   final TextEditingController _emailController = TextEditingController();
   final TextEditingController _passwordController = TextEditingController();
-  bool rememberPassword = false;
+  bool rememberPassword = true;
 
   final AuthService _auth = AuthService();
-
-  @override
-  void initState() {
-    super.initState();
-    _loadUserCredentials();
-  }
-
-  Future<void> _loadUserCredentials() async {
-    final prefs = await SharedPreferences.getInstance();
-    setState(() {
-      rememberPassword = prefs.getBool('rememberPassword') ?? false;
-      if (rememberPassword) {
-        _emailController.text = prefs.getString('userEmail') ?? '';
-        _passwordController.text = prefs.getString('userPassword') ?? '';
-      }
-    });
-  }
 
   Future<void> _signIn() async {
     if (_formSignInKey.currentState!.validate()) {
@@ -59,18 +42,11 @@ class _SignInScreenState extends State<SignInScreen> {
                   content: Text('E-posta doğrulamanızı yapmalısınız!')),
             );
           } else {
-            await _saveUserData(user);
-
             final prefs = await SharedPreferences.getInstance();
-            if (rememberPassword) {
-              await prefs.setBool('rememberPassword', true);
-              await prefs.setString('userEmail', _emailController.text);
-              await prefs.setString('userPassword', _passwordController.text);
-            } else {
-              await prefs.remove('rememberPassword');
-              await prefs.remove('userEmail');
-              await prefs.remove('userPassword');
-            }
+            await prefs.setBool('isLoggedIn', true);
+            await prefs.setString('userEmail', user.email!);
+            await prefs.setString('userPassword',
+                _passwordController.text); // Şifreyi de saklayabilirsiniz
 
             Navigator.pushReplacement(
               context,
@@ -304,9 +280,10 @@ class _SignInScreenState extends State<SignInScreen> {
                             ),
                           ),
                           const Padding(
-                            padding: EdgeInsets.symmetric(horizontal: 10),
+                            padding: EdgeInsets.symmetric(
+                                vertical: 0, horizontal: 10),
                             child: Text(
-                              'Veya',
+                              '...',
                               style: TextStyle(color: Colors.black45),
                             ),
                           ),
@@ -323,21 +300,13 @@ class _SignInScreenState extends State<SignInScreen> {
                         mainAxisAlignment: MainAxisAlignment.spaceEvenly,
                         children: [
                           IconButton(
-                            icon: const FaIcon(
-                              FontAwesomeIcons.google,
-                              size: 25.0, // İkon boyutunu ayarlayın
-                              color: Colors.black54,
-                            ),
-                            onPressed: _signInWithGoogle, // Google ile giriş
+                            icon: const FaIcon(FontAwesomeIcons.google),
+                            onPressed: _signInWithGoogle, //google ile giriş
                           ),
                           IconButton(
-                            icon: const FaIcon(
-                              FontAwesomeIcons.apple,
-                              size: 30.0, // İkon boyutunu ayarlayın
-                              color: Colors.black54,
-                            ),
+                            icon: const FaIcon(FontAwesomeIcons.apple),
                             onPressed: () {
-                              // Apple ile giriş
+                              // Apple ile giriş ama apple cihazım olmadığı için henüz sağlamadım.
                             },
                           ),
                         ],
@@ -345,7 +314,7 @@ class _SignInScreenState extends State<SignInScreen> {
                       const SizedBox(
                         height: 25.0,
                       ),
-                      //giriş yapmaya çalışsan kullanıcının hesabı yoksaS
+                      //giriş yapmaya çalışsan kullanıcının hesabı yoksa
                       Row(
                         mainAxisAlignment: MainAxisAlignment.center,
                         children: [
